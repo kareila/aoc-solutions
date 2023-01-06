@@ -22,9 +22,14 @@ Have fun saving Christmas!
 Changes
 -------
 
+### 6 Jan 2023
+
+Finished solutions for 2020. (It's the twelfth day of Christmas!)
+
+
 ### 27 Dec 2022
 
 Initial release of solutions from 2022.
 
 
-_kareila at dreamwidth dot org // 27 Dec 2022_
+_kareila at dreamwidth dot org // 6 Jan 2023_

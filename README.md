@@ -22,6 +22,11 @@ Have fun saving Christmas!
 Changes
 -------
 
+### 23 Jan 2023
+
+Completed solutions for 2021. Three years down, five to go...
+
+
 ### 6 Jan 2023
 
 Finished solutions for 2020. (It's the twelfth day of Christmas!)
@@ -32,4 +37,4 @@ Finished solutions for 2020. (It's the twelfth day of Christmas!)
 Initial release of solutions from 2022.
 
 
-_kareila at dreamwidth dot org // 6 Jan 2023_
+_kareila at dreamwidth dot org // 23 Jan 2023_

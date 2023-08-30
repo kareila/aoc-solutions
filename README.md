@@ -18,17 +18,23 @@ to me that Elixir scripts take longer to start up than Perl scripts, but
 once they get going, they can resolve large computations faster, especially
 on exercises that can be solved with asynchronous parallel calculations.
 
-I have not included my input files here, because it is my understanding that it is
-frowned upon to do so, and my scripts will quit with an error saying that the input
-file was not found. You will need to either download your own inputs from the AoC site
-(which requires an account), or create a workaround if you want to run my code as-is
-using the examples provided in each puzzle's description on the AoC site.
+I have not included my input files here, because it is my understanding that
+it is frowned upon to do so, and my scripts will quit with an error saying
+that the input file was not found. You will need to either download your own
+inputs from the AoC site (which requires an account), or create a workaround
+if you want to run my code as-is using the examples provided in each puzzle's
+description on the AoC site.
 
 Have fun saving Christmas!
 
 
 Changes
 -------
+
+### 30 Aug 2023
+
+Solved exercises for 2019 using Elixir. Whoa, we're halfway there.
+
 
 ### 27 Apr 2023
 
@@ -50,4 +56,4 @@ Finished solutions for 2020. (It's the twelfth day of Christmas!)
 Initial release of solutions from 2022.
 
 
-_kareila at dreamwidth dot org // 27 Apr 2023_
+_kareila at dreamwidth dot org // 30 Aug 2023_

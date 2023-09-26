@@ -31,6 +31,11 @@ Have fun saving Christmas!
 Changes
 -------
 
+### 26 Sep 2023
+
+Solved exercises for 2017 using Elixir. Elapsed time: only 5 days??
+
+
 ### 20 Sep 2023
 
 Took 7 days to write Elixir versions of my solutions for 2021.
@@ -66,4 +71,4 @@ Finished solutions for 2020. (It's the twelfth day of Christmas!)
 Initial release of solutions from 2022.
 
 
-_kareila at dreamwidth dot org // 20 Sep 2023_
+_kareila at dreamwidth dot org // 26 Sep 2023_

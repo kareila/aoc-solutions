@@ -31,6 +31,14 @@ Have fun saving Christmas!
 Changes
 -------
 
+### 27 Sep 2023
+
+Updated the 2017-2019 Elixir solutions to use shared libraries of
+common functions. Also finally figured out how to use the Intcode
+input data as a map instead of a linked list, resulting in a huge
+speed boost - as much as 10x in some exercises.
+
+
 ### 26 Sep 2023
 
 Solved exercises for 2017 using Elixir. Elapsed time: only 5 days??
@@ -58,17 +66,17 @@ Published Elixir versions of my solutions for the 2022 exercises.
 
 ### 23 Jan 2023
 
-Completed solutions for 2021. Three years down, five to go...
+Completed Perl solutions for 2021. Three years down, five to go...
 
 
 ### 6 Jan 2023
 
-Finished solutions for 2020. (It's the twelfth day of Christmas!)
+Finished Perl solutions for 2020. (It's the twelfth day of Christmas!)
 
 
 ### 27 Dec 2022
 
-Initial release of solutions from 2022.
+Initial release of Perl solutions from 2022.
 
 
-_kareila at dreamwidth dot org // 26 Sep 2023_
+_kareila at dreamwidth dot org // 27 Sep 2023_

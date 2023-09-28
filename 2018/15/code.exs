@@ -1,6 +1,8 @@
 # Solution to Advent of Code 2018, Day 15
 # https://adventofcode.com/2018/day/15
 
+Code.require_file("Matrix.ex", "..")
+
 # This was a beast. Although my initial solving algorithm proved correct,
 # I had a subtle edge case bug that was very hard to find. I was skipping
 # a combatant if its position key had been removed from the enemies hash
@@ -22,22 +24,9 @@ read_input = fn ->
   File.read!(filename) |> String.split("\n", trim: true)
 end
 
-# parses input as a grid of values
-matrix = fn lines ->
-  for {line, y} <- Enum.with_index(lines),
-      {v, x} <- String.graphemes(line) |> Enum.with_index,
-  do: {x, y, v}
-end
-
-# returns a list of rows
-order_points = fn grid ->
-  List.keysort(grid, 0)|> Enum.group_by(&elem(&1,1)) |>
-  Map.to_list |> List.keysort(0) |> Enum.map(&elem(&1,1))
-end
-
 # needed for debugging
 _print_map = fn m_map ->
-  Enum.map_join(order_points.(Map.keys(m_map)), "\n", fn row ->
+  Enum.map_join(Matrix.order_points(m_map), "\n", fn row ->
     {s, i} = Enum.map_reduce(List.keysort(row, 0), [], fn k, h ->
       v = Map.fetch!(m_map, k)
       s = if is_tuple(v), do: elem(v, 0), else: v
@@ -52,7 +41,7 @@ end
 
 parse_lines = fn lines ->
   {cavern, enemies} =
-    Enum.reduce(matrix.(lines), {%{}, %{}}, fn {x, y, v}, {cv, en} ->
+    Enum.reduce(Matrix.grid(lines), {%{}, %{}}, fn {x, y, v}, {cv, en} ->
       if v in ["G", "E"] do
         {Map.put(cv, {x, y}, "."), Map.put(en, {x, y}, v)}
       else
@@ -122,7 +111,7 @@ find_paths = fn stop, loc, data ->
   end)
 end
 
-sort_points = fn grid -> order_points.(grid) |> List.flatten end
+sort_points = fn grid -> Matrix.order_points(grid) |> List.flatten end
 
 # it's important to only attack opponents of the opposite type
 possible_targets = fn pos, data ->

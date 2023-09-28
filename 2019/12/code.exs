@@ -1,22 +1,17 @@
 # Solution to Advent of Code 2019, Day 12
 # https://adventofcode.com/2019/day/12
 
+Code.require_file("Matrix.ex", "..")
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
   File.read!(filename) |> String.split("\n", trim: true)
 end
 
-all_matches = fn str, pat ->
-  Regex.scan(pat, str, capture: :all_but_first) |> Enum.concat
-end
-
-init_system = fn lines ->
-  Enum.map(lines, fn line ->
-    pos = all_matches.(line, ~r"[xyz]=([-0-9]+)")
-       |> Enum.map(&String.to_integer/1)
-    %{pos: pos, vel: [0,0,0]}
-  end)
+init_system = fn line ->
+  Util.read_numbers(line) |> then(&(%{pos: &1, vel: [0,0,0]}))
 end
 
 list_add = fn list1, list2 -> Enum.zip_with(list1, list2, &+/2) end
@@ -25,7 +20,7 @@ apply_gravity = fn system ->
   Enum.map(system, fn moon1 ->
     vel =
       Enum.reduce(system -- [moon1], moon1.vel, fn moon2, vel ->
-        Enum.zip(moon1.pos, moon2.pos) |> Enum.map(fn {p1, p2} ->
+        Enum.zip_with(moon1.pos, moon2.pos, fn p1, p2 ->
           cond do
             p1 < p2 -> 1
             p1 > p2 -> -1
@@ -57,7 +52,7 @@ end
 
 system_energy = fn sys -> Enum.map(sys, total_energy) |> Enum.sum end
 
-data = read_input.() |> init_system.()
+data = read_input.() |> Enum.map(init_system)
 
 IO.puts("Part 1: #{simulate.(data, 1000) |> system_energy.()}")
 
@@ -65,16 +60,13 @@ IO.puts("Part 1: #{simulate.(data, 1000) |> system_energy.()}")
 # Instead of computing the cycle time for the entire system,
 # compute the cycle time for each independent axis separately,
 # and then find the least common multiple of those three numbers.
+lcm = fn a, b -> div(a * b, Integer.gcd(a, b)) end
 
-transpose = fn list -> Enum.zip(list) |> Enum.map(&Tuple.to_list/1) end
-remap = fn axis -> for [p,v] <- axis, do: %{pos: [p], vel: [v]} end
+remap = fn axis -> for [p, v] <- axis, do: %{pos: [p], vel: [v]} end
 
 split_system = fn system ->
-  all_pos = Enum.map(system, fn m -> m.pos end)
-  all_vel = Enum.map(system, fn m -> m.vel end)
-  for {[px, py, pz], [vx, vy, vz]} <- Enum.zip(all_pos, all_vel)
-    do [[px, vx], [py, vy], [pz, vz]]
-  end |> transpose.() |> Enum.map(remap)
+  Enum.map(system, &Matrix.transpose([&1.pos, &1.vel])) |>
+  Matrix.transpose |> Enum.map(remap)
 end
 
 find_cycle = fn init_axis ->
@@ -85,8 +77,7 @@ find_cycle = fn init_axis ->
 end
 
 cycle_all = fn axis_list ->
-  Enum.map(axis_list, find_cycle) |>
-  Enum.reduce(fn a, b -> div(a * b, Integer.gcd(a, b)) end)
+  Enum.map(axis_list, find_cycle) |> Enum.reduce(lcm)
 end
 
 IO.puts("Part 2: #{split_system.(data) |> cycle_all.()}")

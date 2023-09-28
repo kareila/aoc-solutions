@@ -4,16 +4,14 @@ defmodule Intcode do
   as found in the exercises for Advent of Code 2019.
   """
 
-  defp padded_replace(list, pos, val) do
-    cond do
-      pos < 0 -> raise ArgumentError
-      pos < length(list) -> List.replace_at(list, pos, val)
-      true -> list ++ List.duplicate(nil, pos - length(list)) ++ [val]
-    end
+  defp padded_replace(list_map, pos, val), do: Map.put(list_map, pos, val)
+
+  defp next_vals(nums, pos) do
+    Enum.map(pos..(pos + 4), fn i -> Map.get(nums, i, 0) end)
   end
 
   defp parse_opcode(state) do
-    [opcode | vals] = Enum.drop(state.nums, state.pos)
+    [opcode | vals] = next_vals(state.nums, state.pos)
     {modes, opc} = Integer.digits(opcode) |> Enum.split(-2)
     {Integer.undigits(opc), Enum.reverse(modes), vals}
   end
@@ -21,9 +19,9 @@ defmodule Intcode do
   defp parse_param(param, %{nums: nums, modes: modes, r_base: r_base}) do
     Enum.map(param |> Enum.with_index, fn {pos, m_i} ->
       case Enum.at(modes, m_i, 0) do
-        0 -> Enum.at(nums, pos, 0)
+        0 -> Map.get(nums, pos, 0)
         1 -> pos
-        2 -> Enum.at(nums, pos + r_base, 0)
+        2 -> Map.get(nums, pos + r_base, 0)
       end
     end)
   end

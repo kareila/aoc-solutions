@@ -1,26 +1,21 @@
 # Solution to Advent of Code 2018, Day 25
 # https://adventofcode.com/2018/day/25
 
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
   File.read!(filename) |> String.split("\n", trim: true)
 end
 
-parse_line = fn line ->
-  String.split(line, ",") |> Enum.map(&String.to_integer/1) |> List.to_tuple
-end
-
-# calculate the Manhattan distance between 4D points
-m_dist4 = fn {w1, x1, y1, z1}, {w2, x2, y2, z2} ->
-  abs( w1 - w2 ) + abs( x1 - x2 ) + abs( y1 - y2 ) + abs( z1 - z2 )
-end
+parse_line = fn line -> Util.read_numbers(line) |> List.to_tuple end
 
 find_constellation = fn [pos | data] ->
   Enum.reduce_while(Stream.cycle([1]), {data, [pos]},
   fn _, {data, found} ->
     i = Enum.reduce_while(found, nil, fn pos, _ ->
-          i = Enum.find_index(data, fn p -> m_dist4.(p, pos) <= 3 end)
+          i = Enum.find_index(data, fn p -> Util.m_dist(p, pos) <= 3 end)
           if is_nil(i), do: {:cont, i}, else: {:halt, i}
         end)
     if is_nil(i), do: {:halt, {data, found}},

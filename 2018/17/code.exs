@@ -1,31 +1,13 @@
 # Solution to Advent of Code 2018, Day 17
 # https://adventofcode.com/2018/day/17
 
+Code.require_file("Matrix.ex", "..")
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
   File.read!(filename) |> String.split("\n", trim: true)
-end
-
-matrix_map = fn matrix ->
-  for {x, y, v} <- matrix, into: %{}, do: { {x, y}, v }
-end
-
-# returns a list of rows
-order_points = fn grid ->
-  List.keysort(grid, 0) |> Enum.group_by(&elem(&1,1)) |>
-  Map.to_list |> List.keysort(0) |> Enum.map(&elem(&1,1))
-end
-
-min_max_x = fn matrix -> Enum.map(matrix, &elem(&1,0)) |> Enum.min_max end
-min_max_y = fn matrix -> Enum.map(matrix, &elem(&1,1)) |> Enum.min_max end
-
-all_matches = fn str, pat ->
-  Regex.scan(pat, str, capture: :all_but_first) |> Enum.concat
-end
-
-read_numbers = fn str ->
-  all_matches.(str, ~r/(\d+)/) |> Enum.map(&String.to_integer/1)
 end
 
 # I found this additional example to be helpful
@@ -49,7 +31,7 @@ end
 origin = {500, 0}
 
 parse_line = fn line ->
-  [n1, n2, n3] = read_numbers.(line)
+  [n1, n2, n3] = Util.read_numbers(line)
   case String.first(line) do
     "x" -> Enum.map(n2..n3, fn y -> {n1, y, "#"} end)
     "y" -> Enum.map(n2..n3, fn x -> {x, n1, "#"} end)
@@ -57,15 +39,7 @@ parse_line = fn line ->
 end
 
 parse_lines = fn lines ->
-  Enum.flat_map(lines, parse_line) |> matrix_map.() |> Map.put(origin, "+")
-end
-
-# needed for viewing sparse map when debugging
-_normalize_grid = fn grid ->
-  {x0, x1} = min_max_x.(grid)
-  {y0, y1} = min_max_y.(grid)
-  sand = for i <- x0 .. x1, j <- y0 .. y1, do: {i, j, "."}
-  Map.merge(matrix_map.(sand), matrix_map.(grid))
+  Enum.flat_map(lines, parse_line) |> Matrix.map |> Map.put(origin, "+")
 end
 
 point_value = fn data, {x, y} -> Map.get(data, {x, y}, ".") end
@@ -80,7 +54,7 @@ find_edge = fn x, y, limit, fnc, data ->
 end
 
 fill_rows = fn x, y, data ->
-  {x_min, x_max} = Map.keys(data) |> min_max_x.()
+  {x_min, x_max} = Map.keys(data) |> Matrix.min_max_x
   Enum.reduce_while(Stream.cycle([1]), {y, data}, fn _, {y, data} ->
     x1 = find_edge.(x, y, x_min, &(&1 - 1), data)
     x2 = find_edge.(x, y, x_max, &(&1 + 1), data)
@@ -95,7 +69,7 @@ fill_rows = fn x, y, data ->
 end
 
 drop_water = fn {x, y}, data ->
-  depth = Map.keys(data) |> min_max_y.() |> elem(1)
+  depth = Map.keys(data) |> Matrix.min_max_y |> elem(1)
   Enum.reduce_while(Stream.iterate(y, &(&1 + 1)), data, fn j, flow ->
     nxt = point_value.(data, {x, j + 1})
     cond do
@@ -108,7 +82,7 @@ drop_water = fn {x, y}, data ->
 end
 
 mark_flow = fn x, y, minmax, fnc, cmp, data ->
-  limit = Map.keys(data) |> min_max_x.() |> elem(minmax)
+  limit = Map.keys(data) |> Matrix.min_max_x |> elem(minmax)
   Enum.reduce_while(Stream.iterate(x, fnc), data, fn i, flow ->
     nxt = point_value.(data, {fnc.(i), y})
     flr = point_value.(data, {i, y + 1})
@@ -145,8 +119,7 @@ end
 # all flow tiles above the highest clay wall to get the correct answer.
 
 remove_top = fn data ->
-  Map.keys(data) |> order_points.() |>
-  Enum.reduce_while(data, fn row, data ->
+  Enum.reduce_while(Matrix.order_points(data), data, fn row, data ->
     vals = Map.take(data, row) |> Map.values
     if "#" in vals, do: {:halt, data},
     else: {:cont, Map.drop(data, row)}

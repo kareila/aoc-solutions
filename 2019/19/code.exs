@@ -1,11 +1,8 @@
 # Solution to Advent of Code 2019, Day 19
 # https://adventofcode.com/2019/day/19
 
-# NOTE: I had to update Intcode's padded_replace to use a default
-# of zero instead of nil for this program to run correctly.  That
-# was a bug all along, it just didn't affect anything until today.
-
-require Intcode  # for prog_step()
+Code.require_file("Intcode.ex", "..")  # for prog_step()
+Code.require_file("Util.ex", "..")  # for list_to_map()
 
 # returns a list of non-blank lines from the input file
 read_input = fn ->
@@ -17,10 +14,9 @@ parse_input = fn line ->
   String.split(line, ",") |> Enum.map(&String.to_integer/1)
 end
 
-data = read_input.() |> hd |> parse_input.()
+data = read_input.() |> hd |> parse_input.() |> Util.list_to_map
 
 run_program = fn input, data ->
-  input = Tuple.to_list(input)
   init_state = %{pos: 0, nums: data, output: [], r_base: 0, input: input}
   Enum.reduce_while(Stream.cycle([1]), init_state, fn _, state ->
     input = if length(state.input) > 0, do: hd(state.input), else: nil
@@ -33,9 +29,7 @@ run_program = fn input, data ->
   end)
 end
 
-# Running this program sequentially 2500 times takes about 3 seconds.
-# But each calculation runs independently, so we can parallelize.
-
+# Each of these calculations is independent, so we can parallelize.
 start_task = fn input, data ->
   Task.async(fn -> run_program.(input, data) end)
 end
@@ -43,12 +37,11 @@ end
 task_result = fn task -> Task.await(task).output |> hd end
 
 scan_beam = fn data ->
-  inputs = for i <- 0..49, j <- 0..49, do: {i,j}
-  result = Enum.map(inputs, &start_task.(&1, data)) |> Enum.map(task_result)
-  Enum.sum(result)
+  for i <- 0..49, j <- 0..49 do [i, j] end |>
+  Enum.map(&start_task.(&1, data)) |> Enum.map(task_result) |> Enum.sum
 end
 
-IO.puts("Part 1: #{scan_beam.(data)}")  # about 1.5 sec.
+IO.puts("Part 1: #{scan_beam.(data)}")
 
 
 # Okay, I had a wild and exciting time debugging Part 2 on this one.
@@ -60,7 +53,7 @@ IO.puts("Part 1: #{scan_beam.(data)}")  # about 1.5 sec.
 # irrelevant due to symmetry. After correcting the inputs, I had to reverse
 # the square calculation subroutines from my original version as well.
 
-get_val = fn x, y -> run_program.({x,y}, data).output |> hd end
+get_val = fn x, y -> run_program.([x, y], data).output |> hd end
 
 seek = fn y, x, v ->
   Enum.reduce_while(Stream.iterate(y, &(&1 + 1)), nil, fn y, _ ->
@@ -68,11 +61,7 @@ seek = fn y, x, v ->
   end)
 end
 
-find_edge = fn x, y ->
-  y = seek.(y, x, 0) |> seek.(x, 1)
-  {x, y}
-end
-
+find_edge = fn x, y -> {x, seek.(y, x, 0) |> seek.(x, 1)} end
 
 # Starting at 699,699 is a time saving measure, YMMV...
 # Do be careful not to scan too close to 0,0 in any case.
@@ -88,4 +77,4 @@ end
 
 IO.puts("Part 2: #{10000 * sq_x + sq_y}")
 
-# elapsed time: approx. 2.5 sec for both parts together
+# elapsed time: approx. 1.5 sec for both parts together

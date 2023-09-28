@@ -32,16 +32,16 @@ count_minutes = fn data ->
     counts = Map.put_new(counts, day.id, %{})
     Enum.zip(day.sleeps, day.wakes) |>
     Enum.flat_map(fn {s, w} -> Range.to_list(s .. (w - 1)) end) |>
-    Map.from_keys(1) |> Map.merge(counts[day.id], fn _, v1, v2 -> v1 + v2 end) |>
-    then(&Map.put(counts, day.id, &1))
+    Map.from_keys(1) |> Map.merge(counts[day.id], fn _, v1, v2 -> v1 + v2 end)
+    |> then(&Map.put(counts, day.id, &1))
   end)
 end
 
 data = read_input.() |> Enum.sort |> parse_lines.() |> count_minutes.()
 
 find_by = fn search_fn ->
-  Enum.reduce(data, %{}, fn {guard, minutes}, counts ->
-    Map.put(counts, guard, search_fn.(Map.values(minutes)))
+  Enum.map(data, fn {guard, minutes} ->
+    {guard, search_fn.(Map.values(minutes))}
   end) |> Enum.max_by(&elem(&1,1))
 end
 

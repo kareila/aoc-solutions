@@ -1,15 +1,12 @@
 # Solution to Advent of Code 2017, Day 6
 # https://adventofcode.com/2017/day/6
 
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
   File.read!(filename) |> String.split("\n", trim: true)
-end
-
-parse_line = fn line ->
-  String.split(line) |> Enum.map(&String.to_integer/1) |>
-  Enum.with_index |> Map.new(fn {v, i} -> {i, v} end)
 end
 
 redistribute = fn data ->
@@ -23,10 +20,10 @@ end
 
 inspect_state = fn data -> Enum.map_join(data, ",", &elem(&1,1)) end
 
-data = read_input.() |> hd |> parse_line.()
+data = read_input.() |> hd |> Util.read_numbers |> Util.list_to_map
 
 find_repeat = fn ->
-  init_state = Map.put(%{}, inspect_state.(data), 0)
+  init_state = %{inspect_state.(data) => 0}
   Enum.reduce_while(Stream.iterate(1, &(&1 + 1)), {init_state, data},
   fn t, {state, data} ->
     data = redistribute.(data)

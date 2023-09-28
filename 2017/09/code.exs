@@ -1,6 +1,8 @@
 # Solution to Advent of Code 2017, Day 9
 # https://adventofcode.com/2017/day/9
 
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
@@ -8,9 +10,6 @@ read_input = fn ->
 end
 
 # reminder that manipulating large linked lists is painful (see day 5)
-list_to_map = fn list ->
-  Enum.with_index(list) |> Map.new(fn {v, i} -> {i, v} end)
-end
 
 remove_garbage = fn data ->
   result =
@@ -31,6 +30,9 @@ remove_garbage = fn data ->
   %{groups: elem(result, 0), trash: elem(result, 3)}
 end
 
+data = read_input.() |> hd |> String.graphemes |>
+       Util.list_to_map |> remove_garbage.()
+
 score = fn data ->
   Enum.reduce(Enum.sort(data), {0, 0}, fn {_, c}, {stack, score} ->
     cond do
@@ -41,9 +43,6 @@ score = fn data ->
     end
   end) |> elem(1)
 end
-
-data = read_input.() |> hd |> String.graphemes |>
-       list_to_map.() |> remove_garbage.()
 
 IO.puts("Part 1: #{score.(data.groups)}")
 IO.puts("Part 2: #{length(data.trash)}")

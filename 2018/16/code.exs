@@ -3,21 +3,14 @@
 
 import Bitwise
 
-all_matches = fn str, pat ->
-  Regex.scan(pat, str, capture: :all_but_first) |> Enum.concat
-end
-
-read_numbers = fn str ->
-  all_matches.(str, ~r/(\d+)/) |> Enum.map(&String.to_integer/1)
-end
+Code.require_file("Util.ex", "..")
 
 parse_block = fn str ->
-  String.split(str, "\n", trim: true) |> Enum.map(read_numbers)
+  String.split(str, "\n", trim: true) |> Enum.map(&Util.read_numbers/1)
 end
 
 parse_sample = fn str ->
-  parse_block.(str) |> Enum.zip([:before, :instruction, :after]) |>
-  Map.new(fn {v, k} -> {k, v} end)
+  Enum.zip([:before, :instruction, :after], parse_block.(str)) |> Map.new
 end
 
 parse_input = fn ->
@@ -104,8 +97,7 @@ IO.puts("Part 1: #{test_all.(parse_input.())}")
 
 matching_ops = fn samples, omit ->
   Enum.map(samples, fn s ->
-    op_result.(s) |> Enum.with_index |>
-    Enum.flat_map(fn {v, i} ->
+    op_result.(s) |> Util.list_to_map |> Enum.flat_map(fn {i, v} ->
       if v == s.after and {i} not in omit, do: [i], else: []
     end) |> List.to_tuple |> then(&Map.put(s, :opts, &1))
   end) |> Enum.reject(&(tuple_size(&1.opts) == 0)) |>

@@ -1,7 +1,9 @@
 # Solution to Advent of Code 2019, Day 18
 # https://adventofcode.com/2019/day/18
 
-require Recurse  # for search()
+Code.require_file("Matrix.ex", "..")
+Code.require_file("Util.ex", "..")
+Code.require_file("Recurse.ex", ".")  # for search()
 
 # returns a list of non-blank lines from the input file
 read_input = fn ->
@@ -9,18 +11,7 @@ read_input = fn ->
   File.read!(filename) |> String.split("\n", trim: true)
 end
 
-# parses input as a grid of values
-matrix = fn lines ->
-  for {line, y} <- Enum.with_index(lines),
-      {v, x} <- String.graphemes(line) |> Enum.with_index,
-  do: {x, y, v}
-end
-
-matrix_map = fn matrix ->
-  for {x, y, v} <- matrix, into: %{}, do: { {x, y}, v }
-end
-
-data = read_input.() |> matrix.() |> matrix_map.()
+data = read_input.() |> Matrix.map
 
 # We don't need to explore every location in the maze, just the
 # keys and doors - but we need to know the distance between each.
@@ -42,9 +33,8 @@ check_loc = fn loc, visited, grid ->
   end
 end
 
-explore_loc = fn {px, py}, visited, grid ->
-  [{px, py - 1}, {px, py + 1}, {px - 1, py}, {px + 1, py}] |>
-  Enum.flat_map(fn loc -> check_loc.(loc, visited, grid) end) |>
+explore_loc = fn pos, visited, grid ->
+  Util.adj_pos(pos) |> Enum.flat_map(&check_loc.(&1, visited, grid)) |>
   Enum.split_with(&is_tuple/1)
 end
 
@@ -65,9 +55,7 @@ end
 
 # node => [{node, dist}, {node, dist}, ...]
 graph_nodes = fn data ->
-  Enum.reduce(get_nodes.(data), %{}, fn {val, loc}, neighbors ->
-    Map.put(neighbors, val, find_neighbors.(loc, data))
-  end)
+  Map.new(get_nodes.(data), fn {v, xy} -> {v, find_neighbors.(xy, data)} end)
 end
 
 # Now that we've completed our graph of nodes and distances,
@@ -136,8 +124,7 @@ new_starts = [{start_x - 1, start_y - 1}, {start_x - 1, start_y + 1},
               {start_x + 1, start_y - 1}, {start_x + 1, start_y + 1}]
   |> Enum.zip(~w(1 2 3 4)s) |> Map.new
 
-erased = [{start_x, start_y}, {start_x - 1, start_y}, {start_x + 1, start_y},
-          {start_x, start_y - 1}, {start_x, start_y + 1}]
+erased = [{start_x, start_y} | Util.adj_pos({start_x, start_y})]
   |> Map.from_keys("#")
 
 new_data = data |> Map.merge(new_starts) |> Map.merge(erased)

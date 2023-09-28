@@ -3,28 +3,22 @@
 
 import Bitwise
 
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
   File.read!(filename) |> String.split("\n", trim: true)
 end
 
-all_matches = fn str, pat ->
-  Regex.scan(pat, str, capture: :all_but_first) |> Enum.concat
-end
-
-read_numbers = fn str ->
-  all_matches.(str, ~r/(\d+)/) |> Enum.map(&String.to_integer/1)
-end
-
 parse_lines = fn lines ->
   [ip | lines] = lines
-  [ip] = read_numbers.(ip)
+  [ip] = Util.read_numbers(ip)
   lines =
     Enum.map(lines, fn line ->
       [inst, nums] = String.split(line, " ", parts: 2)
-      [inst | read_numbers.(nums)]
-    end)
+      [inst | Util.read_numbers(nums)]
+    end) |> Util.list_to_map
   %{ip: ip, lines: lines}
 end
 
@@ -99,8 +93,8 @@ end
 run_program = fn input ->
   init = {0, 0, 0, 0, 0, 0}
   Enum.reduce_while(Stream.cycle([1]), {init, 0}, fn _, {r, ip} ->
-    line = Enum.at(input.lines, ip, nil)
-    if line == nil, do: {:halt, r},
+    line = Map.get(input.lines, ip)
+    if is_nil(line), do: {:halt, r},
     else: {:cont, exec_line.(input, r, ip, line)}
   end) |> elem(0)
 end
@@ -120,8 +114,8 @@ IO.puts("Part 1: #{run_program.(input)}")
 find_loop = fn input ->
   init = {1, 0, 0, 0, 0, 0}
   Enum.reduce_while(Stream.cycle([1]), {init, 0}, fn _, {r, ip} ->
-    line = Enum.at(input.lines, ip, nil)
-    if line == nil do {:halt, r}
+    line = Map.get(input.lines, ip)
+    if is_nil(line) do {:halt, r}
     else
       {r, nxtip} = exec_line.(input, r, ip, line)
       if nxtip < ip, do: {:halt, r}, else: {:cont, {r, nxtip}}

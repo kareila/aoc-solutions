@@ -1,6 +1,9 @@
 # Solution to Advent of Code 2018, Day 13
 # https://adventofcode.com/2018/day/13
 
+Code.require_file("Matrix.ex", "..")
+Code.require_file("Util.ex", "..")
+
 # NOTE: when passing in string-literal test input, escape any backslashes
 
 # returns a list of non-blank lines from the input file
@@ -9,16 +12,10 @@ read_input = fn ->
   File.read!(filename) |> String.split("\n", trim: true)
 end
 
-# parses input as a grid of values
-matrix = fn lines ->
-  for {line, y} <- Enum.with_index(lines),
-      {v, x} <- String.graphemes(line) |> Enum.with_index,
-  do: {x, y, v}
-end
-
 parse_lines = fn lines ->
   {tracks, carts} =
-    Enum.reduce(matrix.(lines), {%{}, %{}}, fn {x, y, v}, {tracks, carts} ->
+    Enum.reduce(Matrix.grid(lines), {%{}, %{}},
+    fn {x, y, v}, {tracks, carts} ->
       cond do
         v in ["^", "v"] ->
           {Map.put(tracks, {x, y}, "|"), Map.put(carts, {x, y}, {v, 0})}
@@ -40,9 +37,9 @@ eval_intersection = fn v, turn ->
   %{0 => {lt[v], 1}, 1 => {v, 2}, 2 => {rt[v], 0}} |> Map.fetch!(turn)
 end
 
-move_cart = fn {x, y}, {v, turn}, tracks ->
-  next_pos = %{"^" => {x, y - 1}, "<" => {x - 1, y},
-               "v" => {x, y + 1}, ">" => {x + 1, y}} |> Map.fetch!(v)
+move_cart = fn pos, {v, turn}, tracks ->
+  next_pos =
+    Enum.zip(~w(< > ^ v), Util.adj_pos(pos)) |> Map.new |> Map.fetch!(v)
   case Map.fetch!(tracks, next_pos) do
     t when t in ["-", "|"] -> {next_pos, {v, turn}}
     "+" -> {next_pos, eval_intersection.(v, turn)}
@@ -96,11 +93,7 @@ IO.puts("Part 2: #{crash_all.(data)}")
 # print_map = fn data, fout ->
 #   vcart = fn {k, v} -> {k, if(is_tuple(v), do: elem(v, 0), else: v)} end
 #   view = Map.merge(data.tracks, Map.new(data.carts, vcart))
-#   Enum.group_by(Map.keys(view), &elem(&1,1)) |> Map.to_list |>
-#     List.keysort(0) |> Enum.map(&elem(&1,1)) |>
-#     Enum.map_join("\n", fn row ->
-#       Enum.map_join(List.keysort(row, 0), &Map.get(view, &1))
-#     end) |> then(&IO.puts(fout, &1))
+#   Matrix.print_map(view) |> then(&IO.puts(fout, &1))
 #   IO.puts(fout, "\n\n\n")
 # end
 #

@@ -1,16 +1,12 @@
 # Solution to Advent of Code 2017, Day 21
 # https://adventofcode.com/2017/day/21
 
+Code.require_file("Matrix.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
   File.read!(filename) |> String.split("\n", trim: true)
-end
-
-matrix = fn lines ->
-  for {line, y} <- Enum.with_index(lines),
-      {v, x} <- String.graphemes(line) |> Enum.with_index,
-  do: {x, y, v}
 end
 
 # I'm not sure how much using a MapSet helps, since the full grid is
@@ -19,13 +15,13 @@ matrix_mapset = fn matrix ->
   for {x, y, v} <- matrix, v == "#", into: MapSet.new, do: {x, y}
 end
 
-init_square = String.split(".#./..#/###", "/") |> matrix.()
+init_square = String.split(".#./..#/###", "/") |> Matrix.grid
 
 init_grid = %{sz: 3, data: matrix_mapset.(init_square)}
 
 parse_line = fn line -> String.split(line, " => ") |> List.to_tuple end
 
-rules = read_input.() |> Enum.map(parse_line) |> Map.new
+rules = read_input.() |> Map.new(parse_line)
 
 permutations2 = fn [a, b, c, d] ->
   [[a, b, c, d], [a, c, b, d], [d, c, b, a], [d, b, c, a],

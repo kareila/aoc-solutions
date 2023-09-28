@@ -1,7 +1,7 @@
 # Solution to Advent of Code 2017, Day 7
 # https://adventofcode.com/2017/day/7
 
-require Recurse  # for total_weight()
+Code.require_file("Recurse.ex", ".")  # for total_weight()
 
 # returns a list of non-blank lines from the input file
 read_input = fn ->
@@ -18,8 +18,7 @@ parse_line = fn line ->
 end
 
 parse_input = fn lines ->
-  Enum.map(lines, parse_line) |>
-  Enum.reduce(%{}, fn info, nodes -> Map.put(nodes, info.name, info) end)
+  Enum.map(lines, parse_line) |> Map.new(fn info -> {info.name, info} end)
 end
 
 find_root = fn nodes ->

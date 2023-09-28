@@ -1,49 +1,33 @@
 # Solution to Advent of Code 2017, Day 19
 # https://adventofcode.com/2017/day/19
 
+Code.require_file("Matrix.ex", "..")
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
   File.read!(filename) |> String.split("\n", trim: true)
 end
 
-# parses input as a grid of values
-matrix = fn lines ->
-  for {line, y} <- Enum.with_index(lines),
-      {v, x} <- String.graphemes(line) |> Enum.with_index,
-  do: {x, y, v}
-end
-
-matrix_map = fn matrix ->
-  for {x, y, v} <- matrix, into: %{}, do: { {x, y}, v }
-end
-
-adj_pos = fn {x, y} -> [{x - 1, y}, {x + 1, y}, {x, y - 1}, {x, y + 1}] end
-
-# returns a list of rows
-order_points = fn grid ->
-  List.keysort(grid, 0) |> Enum.group_by(&elem(&1,1)) |>
-  Map.to_list |> List.keysort(0) |> Enum.map(&elem(&1,1))
-end
-
 find_start = fn data ->
-  Map.keys(data) |> order_points.() |> hd |> then(&Map.take(data, &1)) |>
-  Enum.group_by(&elem(&1,1), &elem(&1,0)) |> Map.fetch!("|") |> hd
+  Matrix.order_points(data) |> hd |> then(&Map.take(data, &1)) |>
+  Util.group_tuples(1, 0) |> Map.fetch!("|") |> hd
 end
 
-data = read_input.() |> matrix.() |> matrix_map.()
+data = read_input.() |> Matrix.map
 
 init_state = %{pos: find_start.(data), dir: "S", found: ""}
 
-dir_pos = fn pos -> Enum.zip(~w(W E N S), adj_pos.(pos)) |> Map.new end
 is_step = fn pos -> Map.get(data, pos, " ") != " " end
 
 turn_corner = fn pos, dirs ->
-  Map.take(dir_pos.(pos), dirs) |> Enum.find(fn {_, p} -> is_step.(p) end)
+  Util.dir_pos(pos) |> Map.take(dirs) |>
+  Enum.find(fn {_, p} -> is_step.(p) end)
 end
 
 eval_pos = fn %{pos: pos, dir: dir} = state ->
-  state = %{state | pos: Map.fetch!(dir_pos.(pos), dir)}
+  state = %{state | pos: Map.fetch!(Util.dir_pos(pos), dir)}
   loc = Map.fetch!(data, pos)
   cond do
     loc == " " -> raise(RuntimeError)  # lost in space

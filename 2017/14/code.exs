@@ -1,7 +1,8 @@
 # Solution to Advent of Code 2017, Day 14
 # https://adventofcode.com/2017/day/14
 
-require KnotHash  # for hash()
+Code.require_file("Util.ex", "..")
+Code.require_file("KnotHash.ex", ".")  # for hash()
 
 # returns a list of non-blank lines from the input file
 read_input = fn ->
@@ -14,13 +15,9 @@ row_inputs = fn str ->
   List.keysort(0) |> Enum.map(fn {i, s} -> "#{s}-#{i}" end)
 end
 
-parse_digit = fn c ->
-  Integer.parse(c, 16) |> elem(0) |> # decimal value of hex digit
-  Integer.digits(2) |> Enum.join |>  # binary value as string
-  String.pad_leading(4, "0")         # fixed width of 4 bits
+parse_hash = fn s ->
+  Enum.map_join(String.graphemes(s), &Util.hex_digit_to_binary/1)
 end
-
-parse_hash = fn s -> Enum.map_join(String.graphemes(s), parse_digit) end
 
 # Need to reuse the Part 2 solution from Day 10. Since it's kind of
 # a lot of code, I'm moving it to a module. Running it 128 times in
@@ -38,13 +35,12 @@ data = read_input.() |> hd |> row_inputs.() |> Enum.map(start_task) |>
 IO.puts("Part 1: #{MapSet.size(data)}")
 
 
-adj_pos = fn {x, y} -> [{x - 1, y}, {x + 1, y}, {x, y - 1}, {x, y + 1}] end
 used? = fn pos -> MapSet.member?(data, pos) end
 
 # ... and we can reuse our Part 2 solution from Day 12 here...
 find_group = fn pos ->
   Enum.reduce_while(Stream.cycle([1]), MapSet.new([pos]), fn _, found ->
-    nxt = Enum.flat_map(found, adj_pos) |> Enum.filter(used?) |>
+    nxt = Enum.flat_map(found, &Util.adj_pos/1) |> Enum.filter(used?) |>
           MapSet.new |> MapSet.union(found)
     if MapSet.equal?(nxt, found), do: {:halt, found}, else: {:cont, nxt}
   end)

@@ -1,7 +1,8 @@
 # Solution to Advent of Code 2019, Day 21
 # https://adventofcode.com/2019/day/21
 
-require Intcode  # for prog_step()
+Code.require_file("Intcode.ex", "..")  # for prog_step()
+Code.require_file("Util.ex", "..")  # for list_to_map()
 
 # returns a list of non-blank lines from the input file
 read_input = fn ->
@@ -13,7 +14,7 @@ parse_input = fn line ->
   String.split(line, ",") |> Enum.map(&String.to_integer/1)
 end
 
-data = read_input.() |> hd |> parse_input.()
+data = read_input.() |> hd |> parse_input.() |> Util.list_to_map
 
 # this is equivalent to !(A & B & C) & D, or (!A & D) | (!B & D) | (!C & D)
 springscript = """
@@ -60,5 +61,3 @@ RUN
 runspring = run_program.(springscript, data)
 
 IO.puts("Part 2: #{List.last(runspring.output)}")
-
-# elapsed time: approx. 10 sec for both parts together

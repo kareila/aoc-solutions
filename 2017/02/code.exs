@@ -1,21 +1,15 @@
 # Solution to Advent of Code 2017, Day 2
 # https://adventofcode.com/2017/day/2
 
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
   File.read!(filename) |> String.split("\n", trim: true)
 end
 
-all_matches = fn str, pat ->
-  Regex.scan(pat, str, capture: :all_but_first) |> Enum.concat
-end
-
-read_numbers = fn str ->
-  all_matches.(str, ~r/(\d+)/) |> Enum.map(&String.to_integer/1)
-end
-
-data = read_input.() |> Enum.map(read_numbers)
+data = read_input.() |> Enum.map(&Util.read_numbers/1)
 
 checksum = fn row ->
   {min_n, max_n} = Enum.min_max(row)

@@ -1,6 +1,9 @@
 # Solution to Advent of Code 2019, Day 24
 # https://adventofcode.com/2019/day/24
 
+Code.require_file("Matrix.ex", "..")
+Code.require_file("Util.ex", "..")
+
 split_lines = fn str -> String.split(str, "\n", trim: true) end
 
 # returns a list of non-blank lines from the input file
@@ -9,22 +12,7 @@ read_input = fn ->
   File.read!(filename) |> split_lines.()
 end
 
-# parses input as a grid of values
-matrix = fn lines ->
-  for {line, y} <- Enum.with_index(lines),
-      {v, x} <- String.graphemes(line) |> Enum.with_index,
-  do: {x, y, v}
-end
-
-matrix_map = fn matrix ->
-  for {x, y, v} <- matrix, into: %{}, do: { {x, y}, v }
-end
-
-init_data = read_input.() |> matrix.() |> matrix_map.()
-
-adj_coords = fn {x, y} ->
-  [{x - 1, y}, {x + 1, y}, {x, y - 1}, {x, y + 1}]
-end
+init_data = read_input.() |> Matrix.map
 
 next_val = fn adj, v, data ->
   bugs_adj = Enum.count(adj, fn p -> Map.get(data, p, ".") == "#" end)
@@ -36,32 +24,28 @@ next_val = fn adj, v, data ->
 end
 
 print_grid = fn data ->
-  data = Map.put_new(data, {2,2}, "?")  # for inspecting Part 2
-  Map.keys(data) |> Enum.group_by(&elem(&1,1)) |> Map.to_list |>
-    List.keysort(0) |> Enum.map_join("\n", fn {_, row} ->
-      Enum.map_join(List.keysort(row, 0), &(data[&1])) end)
+  Matrix.print_map(Map.put_new(data, {2,2}, "?"))  # for inspecting Part 2
 end
 
 # calculations for Part 1
 
 step = fn data ->
   Map.new(data, fn {pos, v} ->
-    {pos, next_val.(adj_coords.(pos), v, data)}
+    {pos, next_val.(Util.adj_pos(pos), v, data)}
   end)
 end
 
 find_repeat = fn data ->
   Enum.reduce_while(Stream.cycle([1]), {data, MapSet.new},
-  fn _, {data, prev} ->
-    nxt_data = step.(data)
-    snapshot = print_grid.(nxt_data)
-    if MapSet.member?(prev, snapshot), do: {:halt, snapshot},
-    else: {:cont, {nxt_data, MapSet.put(prev, snapshot)}}
+  fn _, {data, seen} ->
+    snapshot = print_grid.(data)
+    if MapSet.member?(seen, snapshot), do: {:halt, snapshot},
+    else: {:cont, {step.(data), MapSet.put(seen, snapshot)}}
   end)
 end
 
 grid_vals = fn snapshot ->
-   split_lines.(snapshot) |> matrix.() |> Enum.map(&elem(&1,2))
+   split_lines.(snapshot) |> Matrix.grid |> Enum.map(&elem(&1,2))
 end
 
 bio_rating = fn snapshot ->
@@ -108,7 +92,7 @@ adj_coords_3d = fn pos ->
     {3, 2, z} -> [{3, 1, z}, {3, 3, z}, {4, 2, z}]
               ++ Enum.map(0..4, fn y -> {4, y, z + 1} end)
     # corners of center
-    {x, y, z} -> adj_coords.({x,y}) |> Enum.map(&Tuple.append(&1, z))
+    {x, y, z} -> Util.adj_pos({x, y}) |> Enum.map(&Tuple.append(&1, z))
   end
 end
 

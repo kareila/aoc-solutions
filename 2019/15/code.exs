@@ -1,7 +1,8 @@
 # Solution to Advent of Code 2019, Day 15
 # https://adventofcode.com/2019/day/15
 
-require Intcode  # for prog_step()
+Code.require_file("Intcode.ex", "..")  # for prog_step()
+Code.require_file("Util.ex", "..")  # for list_to_map()
 
 # returns a list of non-blank lines from the input file
 read_input = fn ->
@@ -13,7 +14,7 @@ parse_input = fn line ->
   String.split(line, ",") |> Enum.map(&String.to_integer/1)
 end
 
-data = read_input.() |> hd |> parse_input.()
+data = read_input.() |> hd |> parse_input.() |> Util.list_to_map
 
 init_state = %{pos: 0, nums: data, output: [], r_base: 0, loc: [{0,0}]}
 
@@ -40,10 +41,14 @@ run_program = fn input, state ->
   end)
 end
 
+advance_state = fn state ->
+  Enum.map(1..4, &run_program.(&1, state)) |>
+  Enum.reject(&(&1.output == [0]))
+end
+
 winner =
   Enum.reduce_while(Stream.cycle([1]), [init_state], fn _, [state | queue] ->
-    adv = Enum.map(1..4, &run_program.(&1, state)) |>
-          Enum.reject(&(&1.output == [0]))
+    adv = advance_state.(state)
     oxy = Enum.filter(adv, &(&1.output == [2]))
     if length(oxy) == 0, do: {:cont, queue ++ adv}, else: {:halt, hd(oxy)}
   end)
@@ -55,11 +60,7 @@ oxy_state = %{winner | loc: [hd(winner.loc)],  output: []}
 
 fill_all =
   Enum.reduce_while(Stream.cycle([1]), [oxy_state], fn _, queue ->
-    adv =
-      Enum.flat_map(queue, fn state ->
-        Enum.map(1..4, &run_program.(&1, state)) |>
-        Enum.reject(&(&1.output == [0]))
-      end)
+    adv = Enum.flat_map(queue, advance_state)
     if length(adv) > 0, do: {:cont, adv}, else: {:halt, hd(queue)}
   end)
 

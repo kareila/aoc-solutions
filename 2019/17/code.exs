@@ -1,7 +1,9 @@
 # Solution to Advent of Code 2019, Day 17
 # https://adventofcode.com/2019/day/17
 
-require Intcode  # for prog_step()
+Code.require_file("Intcode.ex", "..")
+Code.require_file("Util.ex", "..")
+Code.require_file("Matrix.ex", "..")
 
 # returns a list of non-blank lines from the input file
 read_input = fn ->
@@ -13,7 +15,7 @@ parse_input = fn line ->
   String.split(line, ",") |> Enum.map(&String.to_integer/1)
 end
 
-data = read_input.() |> hd |> parse_input.()
+data = read_input.() |> hd |> parse_input.() |> Util.list_to_map
 
 run_program = fn data ->
   init_state = %{pos: 0, nums: data, output: [], r_base: 0}
@@ -23,32 +25,19 @@ run_program = fn data ->
   end)
 end
 
-# parses input as a grid of values
-matrix = fn lines ->
-  for {line, y} <- Enum.with_index(lines),
-      {v, x} <- String.graphemes(line) |> Enum.with_index,
-  do: {x, y, v}
-end
-
-matrix_map = fn matrix ->
-  for {x, y, v} <- matrix, into: %{}, do: { {x, y}, v }
-end
-
 parse_ascii = fn ascii ->
-  List.to_string(ascii) |> String.split("\n", trim: true) |>
-  matrix.() |> matrix_map.()
+  List.to_string(ascii) |> String.split("\n", trim: true) |> Matrix.map
 end
 
 list_intersections = fn data ->
-  Enum.filter(Map.keys(data), fn {x,y} ->
-    [{x, y}, {x - 1, y}, {x + 1, y}, {x, y - 1}, {x, y + 1}] |>
-    Enum.all?(fn pt -> Map.get(data, pt, ".") == "#" end)
+  Enum.filter(Map.keys(data), fn pos ->
+    [pos | Util.adj_pos(pos)] |> Enum.all?(&Map.get(data, &1, ".") == "#")
   end)
 end
 
 point_sum = fn list -> Enum.map(list, &Tuple.product/1) |> Enum.sum end
 
-ascii = run_program.(data).output  # 1 sec.
+ascii = run_program.(data).output
 ascii |> IO.puts
 total = parse_ascii.(ascii) |> list_intersections.() |> point_sum.()
 
@@ -65,7 +54,7 @@ IO.puts("Part 1: #{total}")
 #
 # A, B, A, B, A, C, B, C, A, C
 
-data = List.replace_at(data, 0, 2)
+data = Map.put(data, 0, 2)
 
 # Honestly, after giving up on solving the movement with code, I also
 # still spent plenty of time figuring out how to format the input.
@@ -93,5 +82,3 @@ end
 result = walk_path.(path_code, data).output |> List.last
 
 IO.puts("Part 2: #{result}")
-
-# elapsed time: approx. 3.5 sec for both parts together

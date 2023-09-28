@@ -1,16 +1,12 @@
 # Solution to Advent of Code 2017, Day 3
 # https://adventofcode.com/2017/day/3
 
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
   File.read!(filename) |> String.split("\n", trim: true)
-end
-
-# calculate the Manhattan distance between any two points
-m_dist = fn tup1, tup2 ->
-  Enum.map([tup1, tup2], &Tuple.to_list/1) |>
-  Enum.zip_with(fn [t1, t2] -> abs(t1 - t2) end) |> Enum.sum
 end
 
 # Taking the square's origin as {0,0}, every point at {1,1}, {2,2}, etc.
@@ -42,7 +38,7 @@ find_coords = fn sq, num ->
 end
 
 steps = fn num ->
-  first_odd_square_after.(num) |> find_coords.(num) |> m_dist.({0,0})
+  first_odd_square_after.(num) |> find_coords.(num) |> Util.m_dist({0,0})
 end
 
 input = read_input.() |> hd |> String.to_integer

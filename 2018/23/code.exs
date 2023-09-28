@@ -1,33 +1,25 @@
 # Solution to Advent of Code 2018, Day 23
 # https://adventofcode.com/2018/day/23
 
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
   File.read!(filename) |> String.split("\n", trim: true)
 end
 
-all_matches = fn str, pat ->
-  Regex.scan(pat, str, capture: :all_but_first) |> Enum.concat
-end
-
 parse_line = fn line ->
-  [loc, _, radius] = all_matches.(line, ~r/([-0-9,]+)/)
-  pos = String.split(loc, ",") |> Enum.map(&String.to_integer/1)
-  {List.to_tuple(pos), String.to_integer(radius)}
+  [radius | loc] = Util.read_numbers(line) |> Enum.reverse
+  {Enum.reverse(loc) |> List.to_tuple, radius}
 end
 
 data = read_input.() |> Enum.map(parse_line)
 coords = Enum.map(data, &elem(&1,0))
 
-# calculate the Manhattan distance between 3D points
-m_dist3 = fn {x1, y1, z1}, {x2, y2, z2} ->
-  abs( x1 - x2 ) + abs( y1 - y2 ) + abs( z1 - z2 )
-end
-
 in_largest_range = fn ->
   {origin, range} = List.keysort(data, 1) |> List.last
-  Enum.count(coords, fn pos -> m_dist3.(pos, origin) <= range end)
+  Enum.count(coords, fn pos -> Util.m_dist(pos, origin) <= range end)
 end
 
 IO.puts("Part 1: #{in_largest_range.()}")
@@ -72,7 +64,7 @@ out_of_range = fn box ->
   Enum.count(data, fn {pos, r} -> dist_from_box.(pos, box) > r end)
 end
 
-dist_to_origin = fn box -> m_dist3.(box.min, {0,0,0}) end
+dist_to_origin = fn box -> Util.m_dist(box.min, {0,0,0}) end
 
 index_box = fn box ->
   {out_of_range.(box), dist_to_origin.(box), box.side, box}

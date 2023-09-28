@@ -1,14 +1,13 @@
 # Solution to Advent of Code 2019, Day 3
 # https://adventofcode.com/2019/day/3
 
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
   File.read!(filename) |> String.split("\n", trim: true)
 end
-
-# calculate the Manhattan distance between any two points
-m_dist = fn {x1, y1}, {x2, y2} -> abs( x1 - x2 ) + abs( y1 - y2 ) end
 
 parse_interval = fn str, {pos_x, pos_y} ->
   {dir, dist} = String.split_at(str, 1)
@@ -36,7 +35,7 @@ get_intersections = fn pair ->
 end
 
 min_dist = fn set ->
-  Enum.map(set, fn pos -> m_dist.(pos, {0,0}) end) |> Enum.min
+  Enum.map(set, fn pos -> Util.m_dist(pos, {0,0}) end) |> Enum.min
 end
 
 steps = read_input.() |> Enum.map(get_steps)

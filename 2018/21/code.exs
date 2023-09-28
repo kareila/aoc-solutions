@@ -5,28 +5,22 @@
 
 import Bitwise
 
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
   File.read!(filename) |> String.split("\n", trim: true)
 end
 
-all_matches = fn str, pat ->
-  Regex.scan(pat, str, capture: :all_but_first) |> Enum.concat
-end
-
-read_numbers = fn str ->
-  all_matches.(str, ~r/(\d+)/) |> Enum.map(&String.to_integer/1)
-end
-
 parse_lines = fn lines ->
   [ip | lines] = lines
-  [ip] = read_numbers.(ip)
+  [ip] = Util.read_numbers(ip)
   lines =
     Enum.map(lines, fn line ->
       [inst, nums] = String.split(line, " ", parts: 2)
-      [inst | read_numbers.(nums)]
-    end)
+      [inst | Util.read_numbers(nums)]
+    end) |> Util.list_to_map
   %{ip: ip, lines: lines}
 end
 
@@ -115,10 +109,11 @@ end
 
 find_reg = fn input, q ->
   init = {0, 0, 0, 0, 0, 0}
-  lnno = Enum.find_index(input.lines, fn [i | _] -> i == "eqrr" end)
+  lnno = Enum.flat_map(input.lines, fn {i, [op | _]} ->
+         if op == "eqrr", do: [i], else: [] end) |> hd
   Enum.reduce_while(Stream.cycle([1]), {init, 0}, fn _, {r, ip} ->
-    line = Enum.at(input.lines, ip, nil)
-    if line == nil do {:halt, r}
+    line = Map.get(input.lines, ip)
+    if is_nil(line) do {:halt, r}
     else
       {r, nxtip} = exec_line.(input, r, ip, line)
       if nxtip == lnno, do: {:halt, elem(r, q)},
@@ -138,11 +133,12 @@ IO.puts("Part 1: #{find_reg.(input, 3)}")
 
 cycle_reg = fn input, q ->
   init = {0, 0, 0, 0, 0, 0}
-  lnno = Enum.find_index(input.lines, fn [i | _] -> i == "eqrr" end)
+  lnno = Enum.flat_map(input.lines, fn {i, [op | _]} ->
+         if op == "eqrr", do: [i], else: [] end) |> hd
   Enum.reduce_while(Stream.cycle([1]), {init, 0, MapSet.new, nil},
   fn _, {r, ip, s, e} ->
-    line = Enum.at(input.lines, ip, nil)
-    if line == nil do {:halt, r}
+    line = Map.get(input.lines, ip)
+    if is_nil(line) do {:halt, r}
     else
       {r, nxtip} = exec_line.(input, r, ip, line)
       if nxtip != lnno do {:cont, {r, nxtip, s, e}}
@@ -157,4 +153,5 @@ end
 
 IO.puts("Part 2: #{cycle_reg.(input, 3)}")
 
-# elapsed time: approx. 6.5 minutes(!) for both parts together
+# elapsed time: approx. 5.2 minutes(!) for both parts together
+# (reduced from 6.5 minutes using list_to_map)

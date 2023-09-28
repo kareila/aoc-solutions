@@ -1,6 +1,8 @@
 # Solution to Advent of Code 2018, Day 12
 # https://adventofcode.com/2018/day/12
 
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
@@ -9,11 +11,9 @@ end
 
 parse_input = fn [init | lines] ->
   init_map = String.trim_leading(init, "initial state: ")
-    |> String.graphemes |> Enum.with_index
-    |> Enum.reduce(%{}, fn {c, i}, m -> Map.put(m, i, c) end)
+    |> String.graphemes |> Util.list_to_map
   note_map =
-    Enum.map(lines, &String.split(&1, " => ")) |>
-    Enum.reduce(%{}, fn [k, v], m -> Map.put(m, k, v) end)
+    Enum.map(lines, &String.split(&1, " => ")) |> Map.new(&List.to_tuple/1)
   %{state: init_map, notes: note_map}
 end
 
@@ -30,12 +30,9 @@ end
 
 tick = fn data ->
   {start, stop} = Enum.min_max(Map.keys(data.state))
-  state =
-    Enum.reduce((start - 2) .. (stop + 2), %{}, fn pot, state ->
-      view = view_pot.(pot, data.state)
-      Map.put(state, pot, Map.get(data.notes, view, "."))
-    end)
-  %{data | state: state}
+  Map.new((start - 2) .. (stop + 2), fn pot ->
+    {pot, Map.get(data.notes, view_pot.(pot, data.state), ".")}
+  end) |> then(&(%{data | state: &1}))
 end
 
 advance = fn data, steps ->

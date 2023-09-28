@@ -1,6 +1,8 @@
 # Solution to Advent of Code 2017, Day 5
 # https://adventofcode.com/2017/day/5
 
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
@@ -9,12 +11,7 @@ end
 
 # My first linked list implementation of this took two seconds to run.
 # Part 2 will take over a minute. So switching from list to map...
-
-list_to_map = fn list ->
-  Enum.with_index(list) |> Map.new(fn {v, i} -> {i, v} end)
-end
-
-data = read_input.() |> Enum.map(&String.to_integer/1) |> list_to_map.()
+data = read_input.() |> Enum.map(&String.to_integer/1) |> Util.list_to_map
 
 escape = fn change ->
   Enum.reduce_while(Stream.iterate(0, &(&1 + 1)), {0, data},

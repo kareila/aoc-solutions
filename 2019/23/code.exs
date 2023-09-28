@@ -1,7 +1,8 @@
 # Solution to Advent of Code 2019, Day 23
 # https://adventofcode.com/2019/day/23
 
-require Intcode  # for prog_step()
+Code.require_file("Intcode.ex", "..")  # for prog_step()
+Code.require_file("Util.ex", "..")  # for list_to_map()
 
 # returns a list of non-blank lines from the input file
 read_input = fn ->
@@ -13,12 +14,10 @@ parse_input = fn line ->
   String.split(line, ",") |> Enum.map(&String.to_integer/1)
 end
 
-data = read_input.() |> hd |> parse_input.()
+data = read_input.() |> hd |> parse_input.() |> Util.list_to_map
 
 indices! = Range.to_list(0..49)
 
-# note: I tried changing this from a list to a map but it wasn't faster
-# I suspect the speed is bottlenecked by the size of the data list
 init_network = for addr <- indices!, into: [], do:
   %{pos: 0, nums: data, output: [], r_base: 0,
     input: [addr], halted: false, idle_count: 0}
@@ -104,4 +103,4 @@ end
 
 IO.puts("Part 2: #{run_network.()}")
 
-# elapsed time: approx. 28 sec
+# elapsed time: approx. 3 sec

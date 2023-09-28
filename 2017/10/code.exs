@@ -1,6 +1,8 @@
 # Solution to Advent of Code 2017, Day 10
 # https://adventofcode.com/2017/day/10
 
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
@@ -10,12 +12,12 @@ end
 init_list = fn len -> Map.new(1..len, fn i -> {i - 1, i - 1} end) end
 
 init_state = fn len, data_fn ->
-  data = read_input.() |> data_fn.()
+  data = read_input.() |> hd |> data_fn.()
   %{lengths: data, list: init_list.(len), pos: 0, skip: 0}
 end
 
 init_data = fn input ->
-  hd(input) |> String.split(",") |> Enum.map(&String.to_integer/1)
+  String.split(input, ",") |> Enum.map(&String.to_integer/1)
 end
 
 init_state1 = fn len -> init_state.(len, init_data) end
@@ -37,19 +39,14 @@ do_all = fn state ->
 end
 
 final_product = fn state ->
-  do_all.(state) |> Map.fetch!(:list) |>
-  Map.take([0, 1]) |> Map.values |> Enum.product
+  do_all.(state).list |> Map.take([0, 1]) |> Map.values |> Enum.product
 end
 
 IO.puts("Part 1: #{init_state1.(256) |> final_product.()}")
 
 
-convert_to_ascii = fn input ->
-  hd(input) |> String.codepoints |> Enum.map(fn <<c>> -> c end)
-end
-
 init_ascii = fn input ->
-  convert_to_ascii.(input) ++ [17, 31, 73, 47, 23]
+  String.to_charlist(input) ++ [17, 31, 73, 47, 23]
 end
 
 init_state2 = fn len -> init_state.(len, init_ascii) end
@@ -72,7 +69,7 @@ convert_to_hex = fn num ->
 end
 
 knot_hash = fn state ->
-  do_64.(state) |> Map.fetch!(:list) |> Enum.sort |>
+  do_64.(state).list |> Enum.sort |>
   Enum.map(&elem(&1,1)) |> Enum.chunk_every(16) |>
   Enum.map(fn c -> Enum.reduce(c, &Bitwise.bxor/2) end) |>
   Enum.map_join(convert_to_hex)

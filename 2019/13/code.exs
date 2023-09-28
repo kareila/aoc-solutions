@@ -1,7 +1,8 @@
 # Solution to Advent of Code 2019, Day 13
 # https://adventofcode.com/2019/day/13
 
-require Intcode  # for prog_step()
+Code.require_file("Intcode.ex", "..")  # for prog_step()
+Code.require_file("Util.ex", "..")  # for list_to_map()
 
 # returns a list of non-blank lines from the input file
 read_input = fn ->
@@ -13,7 +14,7 @@ parse_input = fn line ->
   String.split(line, ",") |> Enum.map(&String.to_integer/1)
 end
 
-data = read_input.() |> hd |> parse_input.()
+data = read_input.() |> hd |> parse_input.() |> Util.list_to_map
 
 run_program = fn data, input ->
   state = %{pos: 0, nums: data, output: [], r_base: 0}
@@ -23,9 +24,7 @@ run_program = fn data, input ->
   end)
 end
 
-tile_vals = fn output ->
-  Enum.chunk_every(output, 3) |> Enum.map(&List.last/1)
-end
+tile_vals = fn output -> Enum.drop(output, 2) |> Enum.take_every(3) end
 
 num_blocks = fn vals -> Enum.count(vals, &(&1 == 2)) end
 
@@ -34,7 +33,7 @@ tiles = run_program.(data, nil) |> tile_vals.()
 IO.puts("Part 1: #{num_blocks.(tiles)}")
 
 
-new_game = List.replace_at(data, 0, 2)
+new_game = Map.put(data, 0, 2)
 
 eval_move = fn x, px ->
   cond do

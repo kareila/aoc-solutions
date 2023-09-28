@@ -1,7 +1,8 @@
 # Solution to Advent of Code 2019, Day 25
 # https://adventofcode.com/2019/day/25
 
-require Intcode  # for prog_step()
+Code.require_file("Intcode.ex", "..")  # for prog_step()
+Code.require_file("Util.ex", "..")  # for list_to_map()
 
 # returns a list of non-blank lines from the input file
 read_input = fn ->
@@ -13,12 +14,11 @@ parse_input = fn line ->
   String.split(line, ",") |> Enum.map(&String.to_integer/1)
 end
 
-data = read_input.() |> hd |> parse_input.()
+data = read_input.() |> hd |> parse_input.() |> Util.list_to_map
 
 # I decided I'd rather have fun playing the game manually
 # to figure out the necessary actions than spend a lot of
 # time working on an automated exploration algorithm.
-# Just executing the optimal solution takes about 3 sec.
 
 dronescript = File.read!("script.txt") |> String.to_charlist
 

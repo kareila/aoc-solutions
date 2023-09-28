@@ -12,12 +12,10 @@ defmodule KnotHash do
   end
 
   defp init_list(len), do: Map.new(1..len, fn i -> {i - 1, i - 1} end)
-  defp init_ascii(input), do: convert_to_ascii(input) ++ [17, 31, 73, 47, 23]
+  defp init_ascii(str), do: String.to_charlist(str) ++ [17, 31, 73, 47, 23]
   defp init_state(row, len), do:
     %{lengths: init_ascii(row), list: init_list(len), pos: 0, skip: 0}
   defp mod_size(n, list), do: Integer.mod(n, map_size(list))
-  defp convert_to_ascii(input), do:
-    String.codepoints(input) |> Enum.map(fn <<c>> -> c end)
   defp convert_to_hex(num), do: Integer.digits(num, 16) |>
     Enum.map_join(&hex_translate/1) |> String.pad_leading(2, "0")
   defp hex_translate(digit) do

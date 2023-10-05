@@ -44,13 +44,9 @@ my $point_value = sub {
     return $cube{ join ',', @_ } // '.';
 };
 
-my %adj_cache;
-
 my $get_adjacent_dirs_active = sub {
     my ( $x, $y, $z ) = @_;
     my %adj;
-
-    return $adj_cache{"$x,$y,$z"} if $adj_cache{"$x,$y,$z"};
 
     foreach ( [ $x - 1, $y - 1, $z - 1 ], [ $x - 1, $y - 1, $z + 1 ],
               [ $x + 1, $y - 1, $z - 1 ], [ $x + 1, $y - 1, $z + 1 ],
@@ -69,7 +65,6 @@ my $get_adjacent_dirs_active = sub {
         $adj{ join ',', @$_ } = $point_value->( @$_ ) eq '#' ? 1 : 0;
     }
 
-    $adj_cache{"$x,$y,$z"} = \%adj;
     return \%adj;
 };
 
@@ -94,7 +89,6 @@ my $state_changes = sub {
 
     $set_value->( split( ',' ), '#' ) foreach @activate;
     $set_value->( split( ',' ), '.' ) foreach @deactivate;
-    %adj_cache = ();  # invalidate cache after moves
 };
 
 $state_changes->() foreach ( 1 .. 6 );
@@ -120,8 +114,6 @@ $init_cube->();
 $get_adjacent_dirs_active = sub {
     my ( $x, $y, $z, $w ) = @_;
     my %adj;
-
-    return $adj_cache{"$x,$y,$z,$w"} if $adj_cache{"$x,$y,$z,$w"};
 
     foreach ( [ $x - 1, $y - 1, $z - 1, $w + 0 ], [ $x - 1, $y - 1, $z + 1, $w + 0 ],
               [ $x + 1, $y - 1, $z - 1, $w + 0 ], [ $x + 1, $y - 1, $z + 1, $w + 0 ],
@@ -170,7 +162,6 @@ $get_adjacent_dirs_active = sub {
         $adj{ join ',', @$_ } = $point_value->( @$_ ) eq '#' ? 1 : 0;
     }
 
-    $adj_cache{"$x,$y,$z,$w"} = \%adj;
     return \%adj;
 };
 

@@ -9,9 +9,7 @@ end
 
 data = read_input.() |> Enum.map(&String.to_integer/1)
 
-increases =
-  Enum.zip([nil | data], data) |> tl |>
-  Enum.count(fn {a, b} -> a < b end)
+increases = Enum.zip(data, tl(data)) |> Enum.count(fn {a, b} -> a < b end)
 
 IO.puts("Part 1: #{increases}")
 

@@ -1,7 +1,8 @@
 # Solution to Advent of Code 2021, Day 23
 # https://adventofcode.com/2021/day/23
 
-require Recurse  # for solve()
+Code.require_file("Util.ex", "..")
+Code.require_file("Recurse.ex", ".")  # for solve()
 
 # returns a list of non-blank lines from the input file
 read_input = fn ->
@@ -9,22 +10,15 @@ read_input = fn ->
   File.read!(filename) |> String.split("\n", trim: true)
 end
 
-all_matches = fn str, pat ->
-  Regex.scan(pat, str, capture: :all_but_first) |> Enum.concat
-end
-
 # translate occupant values to numerics, which also correspond
 # to the power of ten that it costs for them to move one step
-occ_num = fn c ->
-  String.graphemes("ABCD") |> Enum.find_index(&(&1 == c))
-end
+occ_num = fn c -> ~w(A B C D)s |> Enum.find_index(&(&1 == c)) end
+occ_zip = fn c, s -> s ++ [occ_num.(c)] end
 
 init_rooms = fn lines ->
-  Enum.flat_map(lines, &all_matches.(&1, ~r/([ABCD])/)) |>
+  Enum.flat_map(lines, &Util.all_matches(&1, ~r/([ABCD])/)) |>
   Enum.chunk_every(4) |>
-  Enum.reduce([[], [], [], []], fn occ, start_rooms ->
-    Enum.zip_with(occ, start_rooms, fn c, s -> s ++ [occ_num.(c)] end)
-  end)
+  Enum.reduce([[], [], [], []], &Enum.zip_with(&1, &2, occ_zip))
 end
 
 #     hallway spots:  0 | 1 | 2 | 3 | 4 | 5 | 6

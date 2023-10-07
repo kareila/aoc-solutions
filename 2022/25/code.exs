@@ -8,11 +8,10 @@ read_input = fn ->
 end
 
 parse_snafu = fn str ->
-  digits = String.graphemes(str) |> Enum.reverse |> Enum.with_index
-  Enum.reduce(digits, 0, fn {digit, i}, number ->
-    d = %{"2" => 2, "1" => 1, "0" => 0, "-" => -1, "=" => -2}[digit]
-    number + d * Integer.pow(5, i)
-  end)
+  d = %{"2" => 2, "1" => 1, "0" => 0, "-" => -1, "=" => -2}
+  String.graphemes(str) |> Enum.reverse |> Enum.map(&Map.fetch!(d, &1)) |>
+  Enum.with_index |> Enum.map(fn {n, i} -> n * Integer.pow(5, i) end) |>
+  Enum.sum
 end
 
 output_snafu = fn num ->

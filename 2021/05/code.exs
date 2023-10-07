@@ -1,21 +1,15 @@
 # Solution to Advent of Code 2021, Day 5
 # https://adventofcode.com/2021/day/5
 
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
   File.read!(filename) |> String.split("\n", trim: true)
 end
 
-all_matches = fn str, pat ->
-  Regex.scan(pat, str, capture: :all_but_first) |> Enum.concat
-end
-
-read_numbers = fn str ->
-  all_matches.(str, ~r/(\d+)/) |> Enum.map(&String.to_integer/1)
-end
-
-data = read_input.() |> Enum.map(read_numbers)
+data = read_input.() |> Enum.map(&Util.read_numbers/1)
 
 # I think the key insight here is that for each range of points, X and
 # Y both will always either (a) change by one, or (b) stay the same.
@@ -33,22 +27,14 @@ update_maps = fn pos, {mapped, overlaps} ->
   else: {MapSet.put(mapped, pos), overlaps}
 end
 
-calc_one = fn ->
-  Enum.reduce(data, {MapSet.new, MapSet.new},
-  fn [x1, y1, x2, y2], map_data ->
-    if x1 == x2 or y1 == y2,
-    do: Enum.reduce(line_points.([x1, y1, x2, y2]), map_data, update_maps),
-    else: map_data
-  end) |> elem(1) |> MapSet.size
-end
-
-IO.puts("Part 1: #{calc_one.()}")
-
-
-calc_two = fn ->
+count_overlaps = fn keep ->
   Enum.reduce(data, {MapSet.new, MapSet.new}, fn line, map_data ->
-    Enum.reduce(line_points.(line), map_data, update_maps)
+    if not keep.(line), do: map_data,
+    else: Enum.reduce(line_points.(line), map_data, update_maps)
   end) |> elem(1) |> MapSet.size
 end
 
-IO.puts("Part 2: #{calc_two.()}")
+no_diagonals = fn [x1, y1, x2, y2] -> x1 == x2 or y1 == y2 end
+
+IO.puts("Part 1: #{count_overlaps.(no_diagonals)}")
+IO.puts("Part 2: #{count_overlaps.(fn _ -> true end)}")

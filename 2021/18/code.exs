@@ -1,7 +1,7 @@
 # Solution to Advent of Code 2021, Day 18
 # https://adventofcode.com/2021/day/18
 
-require Recurse  # for reduce() and magnitude()
+Code.require_file("Recurse.ex", ".")  # for reduce() and magnitude()
 
 # returns a list of non-blank lines from the input file
 read_input = fn ->
@@ -222,13 +222,11 @@ start_task = fn idx ->
   Task.async(fn -> reduce_pair.(pair) |> Recurse.magnitude end)
 end
 
-await_task_result = fn task -> Task.await(task) end
-
 # check all x+y and y+x and note the max magnitude
 calc_pairs = fn ->
   limit = length(pairs) - 1
   for i <- 0..limit, j <- 0..limit, i != j do [i, j] end |>
-  Enum.map(start_task) |> Enum.map(await_task_result) |> Enum.max
+  Enum.map(start_task) |> Enum.map(&Task.await/1) |> Enum.max
 end
 
 IO.puts("Part 2: #{calc_pairs.()}")

@@ -1,18 +1,12 @@
 # Solution to Advent of Code 2021, Day 24
 # https://adventofcode.com/2021/day/24
 
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
   File.read!(filename) |> String.split("\n", trim: true)
-end
-
-all_matches = fn str, pat ->
-  Regex.scan(pat, str, capture: :all_but_first) |> Enum.concat
-end
-
-read_numbers = fn str ->
-  all_matches.(str, ~r/(-?\d+)/) |> Enum.map(&String.to_integer/1)
 end
 
 # I tried to implement the ALU as described, but that didn't help me find
@@ -24,7 +18,7 @@ end
 parse_input = fn lines ->
   Enum.with_index(lines) |>
   Enum.reduce({[], []}, fn {s, i}, {x_add, y_add} ->
-    v = read_numbers.(s)
+    v = Util.read_numbers(s)
     n = Integer.mod(i, 18)
     x_add = if n == 5,  do: x_add ++ v, else: x_add
     y_add = if n == 15, do: y_add ++ v, else: y_add

@@ -1,7 +1,8 @@
 # Solution to Advent of Code 2021, Day 21
 # https://adventofcode.com/2021/day/21
 
-require Recurse  # for parallel_games()
+Code.require_file("Util.ex", "..")
+Code.require_file("Recurse.ex", ".")  # for parallel_games()
 
 # returns a list of non-blank lines from the input file
 read_input = fn ->
@@ -9,20 +10,7 @@ read_input = fn ->
   File.read!(filename) |> String.split("\n", trim: true)
 end
 
-all_matches = fn str, pat ->
-  Regex.scan(pat, str, capture: :all_but_first) |> Enum.concat
-end
-
-read_numbers = fn str ->
-  all_matches.(str, ~r/(\d+)/) |> Enum.map(&String.to_integer/1)
-end
-
-parse_input = fn lines ->
-  Enum.reduce(lines, %{}, fn line, pawns ->
-    [pnum, start] = read_numbers.(line)
-    Map.put(pawns, pnum, start)
-  end)
-end
+parse_line = fn line -> Util.read_numbers(line) |> List.to_tuple end
 
 init_die = %{total: 0, value: 0, roll: fn die ->
   %{die | total: die.total + 1, value: Integer.mod(die.value, 100) + 1} end}
@@ -32,9 +20,7 @@ format_game = fn pawns, win ->
     winner: nil, winning_score: win}
 end
 
-next_stop = fn start, spaces ->
-  Integer.mod(start + spaces - 1, 10) + 1
-end
+next_stop = fn start, spaces -> Integer.mod(start + spaces - 1, 10) + 1 end
 
 track = fn pnum, spaces, game ->
   stop = next_stop.(game.pawns[pnum], spaces)
@@ -60,7 +46,7 @@ play_game = fn game ->
   end)
 end
 
-data = read_input.() |> parse_input.()
+data = read_input.() |> Map.new(parse_line)
 
 calc_one = fn ->
   game = format_game.(data, 1000) |> play_game.()

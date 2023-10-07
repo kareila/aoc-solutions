@@ -13,18 +13,14 @@ end
 
 data = read_input.() |> hd |> parse_line.() |> Enum.frequencies
 
-iterate = fn data ->
-  nxt = Map.to_list(data) |> Enum.map(fn {k, v} -> {k - 1, v} end) |> Map.new
-  if not Map.has_key?(nxt, -1) do nxt
-  else
-    {expired, data} = Map.pop!(nxt, -1)
-    Map.put(data, 8, expired) |> Map.update(6, expired, &(&1 + expired))
-  end
+iterate = fn _, data ->
+  nxt = Map.new(data, fn {k, v} -> {k - 1, v} end)
+  {expired, data} = Map.pop(nxt, -1, 0)
+  Map.put(data, 8, expired) |> Map.update(6, expired, &(&1 + expired))
 end
 
 advance_days = fn days ->
-  Enum.reduce(1..days, data, fn _, data -> iterate.(data) end) |>
-  Map.values |> Enum.sum
+  Enum.reduce(1..days, data, iterate) |> Map.values |> Enum.sum
 end
 
 IO.puts("Part 1: #{advance_days.(80)}")

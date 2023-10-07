@@ -1,23 +1,17 @@
 # Solution to Advent of Code 2021, Day 22
 # https://adventofcode.com/2021/day/22
 
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
   File.read!(filename) |> String.split("\n", trim: true)
 end
 
-all_matches = fn str, pat ->
-  Regex.scan(pat, str, capture: :all_but_first) |> Enum.concat
-end
-
-read_numbers = fn str ->
-  all_matches.(str, ~r/(-?\d+)/) |> Enum.map(&String.to_integer/1)
-end
-
 parse_line = fn line ->
   [flip, line] = String.split(line)
-  [x1, x2, y1, y2, z1, z2] = read_numbers.(line)
+  [x1, x2, y1, y2, z1, z2] = Util.read_numbers(line)
   %{flip: flip, x: x1..x2, y: y1..y2, z: z1..z2}
 end
 

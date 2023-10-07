@@ -1,27 +1,13 @@
 # Solution to Advent of Code 2022, Day 22
 # https://adventofcode.com/2022/day/22
 
+Code.require_file("Matrix.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
   File.read!(filename) |> String.split("\n", trim: true)
 end
-
-# parses input as a grid of values
-matrix = fn lines ->
-  for {line, y} <- Enum.with_index(lines),
-      {v, x} <- String.graphemes(line) |> Enum.with_index,
-  do: {x, y, v}
-end
-
-matrix_map = fn matrix ->
-  for {x, y, v} <- matrix, into: %{}, do: { {x, y}, v }
-end
-
-cols = fn matrix -> Enum.group_by(matrix, &elem(&1,0)) |> Map.values end
-rows = fn matrix -> Enum.group_by(matrix, &elem(&1,1)) |> Map.values end
-max_x = fn matrix -> Enum.count(cols.(matrix)) - 1 end
-max_y = fn matrix -> Enum.count(rows.(matrix)) - 1 end
 
 parse_lines = fn lines ->
   {path, lines} = List.pop_at(lines, -1)
@@ -30,13 +16,13 @@ parse_lines = fn lines ->
   # initial position (keep this for reset later)
   init_x = hd(lines) |> String.graphemes |> Enum.find_index(&(&1 == "."))
   pos = %{facing: 0, y: 0, x: init_x}
-  grid = matrix.(lines)
-  [mx, my] = [max_x.(grid), max_y.(grid)]
+  grid = Matrix.map(lines)
+  {_, mx, _, my} = Matrix.limits(grid)
   # we only need mx and my for static search range limits
   range = %{right: 0..mx-1//1, left: mx..1//-1,
              down: 0..my-1//1, up: my..1//-1}
   # removing spaces reduces the grid size by 25%
-  grid = grid |> Enum.reject(&(elem(&1,2) == " ")) |> matrix_map.()
+  grid = Map.reject(grid, &(elem(&1,1) == " "))
   %{steps: steps, pos: pos, init_x: init_x, grid: grid, range: range}
 end
 
@@ -167,7 +153,7 @@ data = %{data | pos: %{facing: 0, y: 0, x: data.init_x}}
 # Note: this solution is designed only for the exact grid shape above.
 
 wrap_around = fn data ->
-  limits = Enum.map(1..4, fn n -> {n, n * data.face_size} end) |> Map.new
+  limits = Map.new(1..4, fn n -> {n, n * data.face_size} end)
   mod_f = fn n -> Integer.mod(n, data.face_size) + 1 end
   [px, py] = [data.pos.x, data.pos.y]
   case data.pos.facing do

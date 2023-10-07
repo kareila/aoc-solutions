@@ -1,7 +1,7 @@
 # Solution to Advent of Code 2022, Day 21
 # https://adventofcode.com/2022/day/21
 
-require Recurse  # for calc() and search()
+Code.require_file("Recurse.ex", ".")  # for calc() and search()
 
 # returns a list of non-blank lines from the input file
 read_input = fn ->
@@ -11,14 +11,14 @@ end
 
 parse_lines = fn lines ->
   math = %{"+" => &+/2, "-" => &-/2, "*" => &*/2, "/" => &div/2}
-  Enum.reduce(lines, %{}, fn l, monkeys ->
-    [_, name, job] = Regex.run(~r"^([^:]+): (.*)$", l)
+  Map.new(lines, fn l ->
+    [name, job] = String.split(l, ": ")
     if String.match?(job, ~r/^\d+$/) do
-      Map.put(monkeys, name, %{num: String.to_integer(job)})
+      {name, %{num: String.to_integer(job)}}
     else
-      [_, a, op, b] = Regex.run(~r"^(\S+) ([-+*/]) (\S+)$", job)
+      [a, op, b] = String.split(job)
       op_fn = math[op]  # also need symbol for Part 2
-      Map.put(monkeys, name, %{a: a, b: b, op: op_fn, sym: op})
+      {name, %{a: a, b: b, op: op_fn, sym: op}}
     end
   end)
 end

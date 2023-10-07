@@ -1,6 +1,8 @@
 # Solution to Advent of Code 2022, Day 19
 # https://adventofcode.com/2022/day/19
 
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
@@ -12,18 +14,18 @@ t_list = ~w[ore clay obsidian geode]s
 typeid = fn s -> Enum.find_index(t_list, &(&1 == s)) end
 
 parse_lines = fn lines ->
-  Enum.reduce(lines, %{}, fn l, blueprints ->
+  Map.new(lines, fn l ->
     [_, idnum] = Regex.run(~r/^Blueprint (\d+):/, l)
     recipes = Regex.scan(~r/Each (\w+) robot costs ([^.]+)\./, l)
-    bp = Enum.reduce(recipes, %{}, fn [_, type, recipe], bp ->
+    bp = Map.new(recipes, fn [_, type, recipe] ->
       cost = String.split(recipe, " and ")  # max 2 elements per recipe
-      bpt = Enum.reduce(cost, %{}, fn c, bpt ->
+      bpt = Map.new(cost, fn c ->
         [num, thing] = String.split(c)
-        Map.put(bpt, typeid.(thing), String.to_integer(num))
+        {typeid.(thing), String.to_integer(num)}
       end)
-      Map.put(bp, typeid.(type), bpt)
+      {typeid.(type), bpt}
     end)
-    Map.put(blueprints, String.to_integer(idnum), bp)
+    {String.to_integer(idnum), bp}
   end)
 end
 
@@ -35,18 +37,12 @@ blueprints = read_input.() |> parse_lines.()
 # because we can only build one robot per minute.
 max_costs = fn bp ->
   t_costs = Map.values(bp) |> Enum.flat_map(&Map.to_list/1)
-    |> Enum.group_by(&elem(&1,0), &elem(&1,1))  # type => costs
-  Enum.reduce(0..max_t, %{}, fn t, max_cost ->
-    if t == max_t do
-      Map.put(max_cost, t, 999999999999999)  # we always need more geodes
-    else
-      Map.put(max_cost, t, Map.get(t_costs, t, [0]) |> Enum.max)
-    end
-  end)
-end
+    |> Util.group_tuples(0, 1)  # type => costs
+  max_c = fn t -> {t, Map.get(t_costs, t, [0]) |> Enum.max} end
+  Map.new(0..(max_t - 1), max_c) |> Map.put(max_t, 999999999999999)
+end                                        # we always need more geodes
 
-bp_costs = Enum.reduce(blueprints, %{}, fn {k, bp}, mc ->
-  Map.put(mc, k, max_costs.(bp)) end)
+bp_costs = Map.new(blueprints, fn {k, bp} -> {k, max_costs.(bp)} end)
       
 # Given a set of blueprints and resources, can we make this type of robot?
 can_make? = fn idnum, typeid, resources, robots, minutes_left ->
@@ -58,18 +54,12 @@ can_make? = fn idnum, typeid, resources, robots, minutes_left ->
     rt_num > 0 and minutes_left != nil and typeid != max_t
       and rt_num * minutes_left + rs_num >= minutes_left * max_cost -> false
     true ->  # Do we have the resources we need?
-      Enum.reduce(costs, true, fn {k,v}, ok ->
-        amt = Map.get(resources, k, 0)
-        if amt < 0, do: raise(RuntimeError, "Can't have negative resources!")
-        ok and amt >= v
-      end)
+      Enum.all?(costs, fn {k, v} -> Map.get(resources, k, 0) >= v end)
   end
 end
 
 produce = fn robots, resources ->
-  Enum.reduce(robots, resources, fn {t,n}, resources ->
-    Map.update(resources, t, n, &(&1 + n))
-  end)
+  Map.merge(robots, resources, fn _, v1, v2 -> v1 + v2 end)
 end
 
 build_robot = fn idnum, typeid, resources, robots ->
@@ -77,9 +67,7 @@ build_robot = fn idnum, typeid, resources, robots ->
   do {resources, robots}
   else 
     resources = blueprints[idnum][typeid] |>
-      Enum.reduce(resources, fn {k,v}, resources ->
-        Map.update!(resources, k, &(&1 - v))
-      end)
+      Map.merge(resources, fn _, v1, v2 -> v2 - v1 end)
     {produce.(robots, resources), Map.update(robots, typeid, 1, &(&1 + 1))}
   end
 end
@@ -166,10 +154,7 @@ end
 
 start_task = fn idnum, t -> Task.async(fn -> calc_path.(idnum, t) end) end
 
-await_task_result = fn task ->
-  {idnum, best} = Task.await(task)
-  idnum * best
-end
+await_task_result = fn task -> Task.await(task) |> Tuple.product end
 
 quality_sum = Map.keys(blueprints) |> Enum.map(&start_task.(&1, 24))
   |> Enum.map(await_task_result) |> Enum.sum
@@ -180,14 +165,11 @@ IO.puts("Part 1: #{quality_sum}")
 # hungry elephant eats all but the first 3 blueprints
 blueprints = Map.filter(blueprints, fn {k, _} -> k in 1..3 end)
 
-await_task_result = fn task ->
-  {_idnum, best} = Task.await(task)
-  best
-end
+await_task_result = fn task -> Task.await(task) |> elem(1) end
 
 total32 = Map.keys(blueprints) |> Enum.map(&start_task.(&1, 32))
   |> Enum.map(await_task_result) |> Enum.product
 
 IO.puts("Part 2: #{total32}")
 
-# elapsed time: approx. 4 seconds for both parts together
+# elapsed time: approx. 3.4 seconds for both parts together

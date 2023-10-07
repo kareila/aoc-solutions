@@ -19,32 +19,25 @@ end
 
 init_data = fn paths -> %{ paths: paths, visited: MapSet.new } end
 
-next_steps = fn valves, visited ->
-  Enum.reject(valves, &MapSet.member?(visited, &1))
-end
-
 eval_pos = fn {stop, links}, data ->
-  [cur_path | paths] = data.paths
-  pos = hd(cur_path)
+  [{pos, len} | paths] = data.paths
   visited = MapSet.put(data.visited, pos)  # not stored yet
-  possible = next_steps.(links[pos], data.visited)
+  nxt_data = %{data | visited: visited, paths: paths}
   cond do
-    pos == stop -> {:halt, length(cur_path)}
-    MapSet.member?(data.visited, pos) -> {:cont, %{data | paths: paths}}
-    Enum.empty?(possible) -> {:cont, %{data | visited: visited, paths: paths}}
-    true -> new_paths = Enum.map(possible, fn p -> [p | cur_path] end)
-    paths = new_paths ++ paths |> Enum.sort_by(&length/1)  # slightly faster
-    {:cont, %{data | visited: visited, paths: paths}}      #  than appending
+    pos == stop -> {:halt, len}
+    MapSet.member?(data.visited, pos) -> {:cont, nxt_data}
+    true -> new_paths = Enum.map(links[pos], fn p -> {p, len + 1} end)
+    {:cont, %{nxt_data | paths: List.keysort(paths ++ new_paths, 1)}}
   end
 end
 
 path_vals = fn links ->
-  for i <- Map.keys(links), j <- Map.keys(links), do: {i, j}
+  for i <- Map.keys(links), j <- Map.keys(links), i != j, do: {i, j}
 end
 
 shortest_paths = fn links ->
   Enum.reduce(path_vals.(links), %{}, fn {start, stop}, paths ->
-    data = init_data.([[start]])
+    data = init_data.([{start, 1}])
     dist = Enum.reduce_while(Stream.cycle([{stop, links}]), data, eval_pos)
     Map.put(paths, {start, stop}, dist)
   end)
@@ -80,7 +73,7 @@ end
 prod_val = fn {_, {_, v}} -> v end
 
 # Without parallelization, this takes about 11.7 seconds to run, compared
-# to ~9 seconds for the Perl version. Using async reduces it to 3.2 sec!
+# to ~9 seconds for the Perl version. Using async reduces it to 3 sec!
 
 start_task = fn routes, valves -> Task.async(fn ->
   # keep visiting more valves until routes is no longer changing
@@ -123,4 +116,4 @@ best_e = best_path.(%{valves | closed: valves.closed -- elem(best_p, 0)})
 
 IO.puts("Part 2: #{prod_val.(best_p) + prod_val.(best_e)}")
 
-# elapsed time: approx. 3.6 seconds for both parts together
+# elapsed time: approx. 3.4 seconds for both parts together

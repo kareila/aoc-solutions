@@ -31,6 +31,13 @@ Have fun saving Christmas!
 Changes
 -------
 
+### 7 Oct 2023
+
+Updated the 2021-2022 Elixir solutions to use the shared libraries.
+I think I'm finally done with revisions on these - I kept coming back
+because I enjoyed writing code in Elixir so much.
+
+
 ### 4 Oct 2023
 
 Finished Elixir versions of my solutions for the 2020 exercises.
@@ -85,4 +92,4 @@ Finished Perl solutions for 2020. (It's the twelfth day of Christmas!)
 Initial release of Perl solutions from 2022.
 
 
-_kareila at dreamwidth dot org // 4 Oct 2023_
+_kareila at dreamwidth dot org // 7 Oct 2023_

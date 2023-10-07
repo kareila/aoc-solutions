@@ -1,6 +1,9 @@
 # Solution to Advent of Code 2021, Day 13
 # https://adventofcode.com/2021/day/13
 
+Code.require_file("Matrix.ex", "..")
+Code.require_file("Util.ex", "..")
+
 # returns TWO SETS of lines from the input file
 read_input = fn ->
   filename = "input.txt"
@@ -8,16 +11,8 @@ read_input = fn ->
   Enum.map(&String.split(&1, "\n", trim: true))
 end
 
-all_matches = fn str, pat ->
-  Regex.scan(pat, str, capture: :all_but_first) |> Enum.concat
-end
-
-read_numbers = fn str ->
-  all_matches.(str, ~r/(\d+)/) |> Enum.map(&String.to_integer/1)
-end
-
 parse_coords = fn lines ->
-  Enum.map(lines, read_numbers) |> Enum.map(&List.to_tuple/1)
+  Enum.map(lines, &List.to_tuple(Util.read_numbers(&1)))
 end
 
 parse_instructions = fn lines ->
@@ -27,79 +22,48 @@ parse_instructions = fn lines ->
   end)
 end
 
-parse_input = fn [coords, instructions] ->
-  %{coords: parse_coords.(coords) |> MapSet.new,
-    instructions: parse_instructions.(instructions)}
+parse_input = fn [coords, folds] ->
+  %{coords: parse_coords.(coords), instructions: parse_instructions.(folds)}
 end
-
-min_max_x = fn matrix -> Enum.map(matrix, &elem(&1,0)) |> Enum.min_max end
-min_max_y = fn matrix -> Enum.map(matrix, &elem(&1,1)) |> Enum.min_max end
 
 # Note: dots will never appear exactly on a fold line
 fold_fn = fn val, coords, minmax, splitter, mapper ->
-  max_n = MapSet.to_list(coords) |> minmax.() |> elem(1)
+  max_n = minmax.(coords) |> elem(1)
   Enum.reduce(max_n..(val + 1), coords, fn n, coords ->
     new_n = 2 * val - n
-    {row, coords} = MapSet.split_with(coords, &splitter.(&1, n))
-    Enum.reduce(row, coords, &MapSet.put(&2, mapper.(&1, new_n)))
-  end)
+    {row, coords} = Enum.split_with(coords, &splitter.(&1, n))
+    Enum.reduce(row, coords, &[mapper.(&1, new_n) | &2])
+  end) |> Enum.uniq  # this is faster than using MapSet
 end
 
-fold_up = fn val, coords ->
+fold_y = fn val, coords ->
   splitter = fn {_, y}, j -> y == j end
   mapper = fn {x, _}, new_j -> {x, new_j} end
-  fold_fn.(val, coords, min_max_y, splitter, mapper)
+  fold_fn.(val, coords, &Matrix.min_max_y/1, splitter, mapper)
 end
 
-fold_left = fn val, coords ->
+fold_x = fn val, coords ->
   splitter = fn {x, _}, i -> x == i end
   mapper = fn {_, y}, new_i -> {new_i, y} end
-  fold_fn.(val, coords, min_max_x, splitter, mapper)
+  fold_fn.(val, coords, &Matrix.min_max_x/1, splitter, mapper)
 end
 
 do_fold = fn {axis, val}, coords ->
-  case axis do
-    "y" -> fold_up.(val, coords)
-    "x" -> fold_left.(val, coords)
-  end
+  Map.fetch!(%{"y" => fold_y, "x" => fold_x}, axis).(val, coords)
 end
 
 data = read_input.() |> parse_input.()
 
 fold_once = fn ->
-  do_fold.(hd(data.instructions), data.coords) |> MapSet.size
+  do_fold.(hd(data.instructions), data.coords) |> length
 end
 
 IO.puts("Part 1: #{fold_once.()}")
 
 
-# including a bunch of personal library routines to print the folded data
-matrix_map = fn matrix ->
-  for {x, y, v} <- matrix, into: %{}, do: { {x, y}, v }
-end
-
-normalize_grid = fn grid ->
-  {x0, x1} = min_max_x.(grid)
-  {y0, y1} = min_max_y.(grid)
-  bg = for i <- x0 .. x1, j <- y0 .. y1, do: {i, j, "."}
-  Map.merge(matrix_map.(bg), matrix_map.(grid))
-end
-
-order_points = fn grid ->
-  List.keysort(grid, 0) |> Enum.group_by(&elem(&1,1)) |>
-  Map.to_list |> List.keysort(0) |> Enum.map(&elem(&1,1))
-end
-
-print_map = fn m_map ->
-  Enum.map_join(order_points.(Map.keys(m_map)), "\n",
-    fn row -> Enum.map_join(row, &Map.fetch!(m_map, &1))
-  end)
-end
-
 fold_all = fn ->
   Enum.reduce(data.instructions, data.coords, do_fold) |>
-  Enum.map(fn {x, y} -> {x, y, "#"} end) |>
-  normalize_grid.() |> print_map.()
+  Map.from_keys("#") |> Matrix.print_sparse_map
 end
 
 IO.puts("Part 2:\n#{fold_all.()}\n")

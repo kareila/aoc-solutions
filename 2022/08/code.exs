@@ -1,27 +1,17 @@
 # Solution to Advent of Code 2022, Day 8
 # https://adventofcode.com/2022/day/8
 
+Code.require_file("Matrix.ex", "..")
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
   File.read!(filename) |> String.split("\n", trim: true)
 end
 
-# parses input as a grid of values
-matrix = fn lines ->
-  for {line, y} <- Enum.with_index(lines),
-      {v, x} <- String.graphemes(line) |> Enum.with_index,
-  do: {x, y, String.to_integer(v)}
-end
-
-matrix_map = fn matrix ->
-  for {x, y, v} <- matrix, into: %{}, do: { {x, y}, v }
-end
-
-cols = fn matrix -> Enum.group_by(matrix, &elem(&1,0)) |> Map.values end
-rows = fn matrix -> Enum.group_by(matrix, &elem(&1,1)) |> Map.values end
-max_x = fn matrix -> Enum.count(cols.(matrix)) - 1 end
-max_y = fn matrix -> Enum.count(rows.(matrix)) - 1 end
+cols = fn matrix -> Util.group_tuples(matrix, 0) |> Map.values end
+rows = fn matrix -> Util.group_tuples(matrix, 1) |> Map.values end
 
 # For part 1, the question is how many trees on the grid
 # can be seen from the outside - that means we need to track
@@ -41,12 +31,12 @@ end
 
 num_seen = fn data ->
   cols_rows = [cols.(data), rows.(data)]
-  [north, west] = Enum.map(cols_rows, &(check_edge.(&1, false)))
-  [south, east] = Enum.map(cols_rows, &(check_edge.(&1, true)))
-  List.flatten([north, south, west, east]) |> Enum.uniq |> Enum.count
+  [north, west] = Enum.map(cols_rows, &check_edge.(&1, false))
+  [south, east] = Enum.map(cols_rows, &check_edge.(&1, true))
+  List.flatten([north, south, west, east]) |> Enum.uniq |> length
 end
 
-data = read_input.() |> matrix.()
+data = read_input.() |> Matrix.grid
 
 IO.puts("Part 1: #{num_seen.(data)}")
 
@@ -78,8 +68,9 @@ score_tree = fn tree, data, lim ->
 end
 
 all_scores = fn matrix ->
-  data = matrix_map.(matrix)
-  limit = %{ x: max_x.(matrix), y: max_y.(matrix) }
+  data = Matrix.map(matrix)
+  {_, x_max, _, y_max} = Matrix.limits(matrix)
+  limit = %{x: x_max, y: y_max}
   for tree <- matrix, {x, y, _} = tree,
     x not in [0, limit.x] and y not in [0, limit.y]
     do score_tree.(tree, data, limit)

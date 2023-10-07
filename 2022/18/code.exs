@@ -1,7 +1,8 @@
 # Solution to Advent of Code 2022, Day 18
 # https://adventofcode.com/2022/day/18
 
-require Recurse  # for search()
+Code.require_file("Util.ex", "..")
+Code.require_file("Recurse.ex", ".")  # for search()
 
 # returns a list of non-blank lines from the input file
 read_input = fn ->
@@ -9,22 +10,14 @@ read_input = fn ->
   File.read!(filename) |> String.split("\n", trim: true)
 end
 
-parse_lines = fn lines ->
-  Enum.reduce(lines, MapSet.new, fn l, data ->
-    [x, y, z] = String.split(l, ",") |> Enum.map(&String.to_integer/1)
-    MapSet.put(data, {x,y,z})
-  end)
-end
-
-data = read_input.() |> parse_lines.()
+data = MapSet.new(read_input.(), &List.to_tuple(Util.read_numbers(&1)))
 
 # check each value's six neighbors for exposed faces
-count = Enum.reduce(data, 0, fn {x,y,z}, ct ->
-  f = [{x-1,y,z}, {x+1,y,z}, {x,y-1,z}, {x,y+1,z}, {x,y,z-1}, {x,y,z+1}]
-  ct + 6 - Enum.count(f, &MapSet.member?(data, &1))
-end)
+exposed = Enum.flat_map(data, fn {x,y,z} ->
+  [{x-1,y,z}, {x+1,y,z}, {x,y-1,z}, {x,y+1,z}, {x,y,z-1}, {x,y,z+1}] end) |>
+  Enum.count(fn f -> f not in data end)
 
-IO.puts("Part 1: #{count}")
+IO.puts("Part 1: #{exposed}")
 
 
 # calculate upper and lower bounds in all dimensions

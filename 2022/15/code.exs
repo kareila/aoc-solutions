@@ -1,14 +1,13 @@
 # Solution to Advent of Code 2022, Day 15
 # https://adventofcode.com/2022/day/15
 
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
   File.read!(filename) |> String.split("\n", trim: true)
 end
-
-# calculate the Manhattan distance between any two points
-m_dist = fn {x1, y1}, {x2, y2} -> abs( x1 - x2 ) + abs( y1 - y2 ) end
 
 # At first this looks like another grid mapping problem, but the areas
 # are potentially huge (cf. "the row where y=2000000"). Instead, let's
@@ -22,15 +21,14 @@ find_x = fn {x1, y1}, d, y2 ->
 end
 
 sub_sensor = fn sensor_xy, beacon_xy ->
-  fn y -> find_x.(sensor_xy, m_dist.(sensor_xy, beacon_xy), y) end
+  sb_dist = Util.m_dist(sensor_xy, beacon_xy)  # this doesn't change
+  fn y -> find_x.(sensor_xy, sb_dist, y) end
 end
 
 # create a dataset of all sensors and known beacon positions
 parse_lines = fn lines ->
   Enum.reduce(lines, %{sensors: [], beacons: %{}}, fn l, data ->
-    [x1, y1] = Regex.run(~r/ x=([-]?\d+), y=([-]?\d+):/, l) |> tl
-    [x2, y2] = Regex.run(~r/ x=([-]?\d+), y=([-]?\d+)$/, l) |> tl
-    [x1, y1, x2, y2] = Enum.map([x1, y1, x2, y2], &String.to_integer/1)
+    [x1, y1, x2, y2] = Util.read_numbers(l)
     sensors = [sub_sensor.( {x1, y1}, {x2, y2} ) | data.sensors]
     beacons = Map.put(data.beacons, y2, x2)  # no two beacons share a y2
     %{data | sensors: sensors, beacons: beacons}
@@ -64,12 +62,12 @@ IO.puts("Part 1: #{check_coverage.(data, 2_000_000)}")
 # Slight timing tweak - answer seems to be on the higher end of y in my
 # version of the input, so running backwards to zero resolves faster.
 
-{gap_y, gap_coverage} = Enum.reduce_while(4_000_000..0, data.sensors,
-  fn y, sensors ->
-    coverage = calc_coverage.(sensors, y)
+{gap_y, gap_coverage} = Enum.reduce_while(4_000_000..0, nil,
+  fn y, _ ->
+    coverage = calc_coverage.(data.sensors, y)
     try do
       Enum.reduce(coverage, collapse_ranges)
-      {:cont, sensors}
+      {:cont, nil}
     rescue
       _ -> {:halt, {y, coverage}}
     end
@@ -82,3 +80,5 @@ gap_x = Enum.reduce_while(gap_ranges, nil, fn {r1, r2}, _ ->
 end)
 
 IO.puts("Part 2: #{4_000_000 * gap_x + gap_y}")
+
+# elapsed time: approx. 2.1 sec for both parts together

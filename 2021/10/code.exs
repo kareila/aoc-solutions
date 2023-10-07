@@ -8,11 +8,9 @@ read_input = fn ->
 end
 
 # just split this into characters
-parse_input = fn lines ->
-  Enum.map(lines, &String.graphemes/1)
-end
+parse_input = fn lines -> Enum.map(lines, &String.graphemes/1) end
 
-# adding a bogus 0 index character to adjust the scores for Part 2
+# adding a bogus 0 index character "_" to adjust the scores for Part 2
 start_chars = "_([{<" |> String.graphemes
 close_chars = "_)]}>" |> String.graphemes
 error_score = %{")" => 3, "]" => 57, "}" => 1197, ">" => 25137}

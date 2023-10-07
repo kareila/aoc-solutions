@@ -1,23 +1,17 @@
 # Solution to Advent of Code 2021, Day 19
 # https://adventofcode.com/2021/day/19
 
+Code.require_file("Util.ex", "..")
+
 # returns a list of text blocks from the input file
 read_input = fn ->
   filename = "input.txt"
   File.read!(filename) |> String.split("\n\n", trim: true)
 end
 
-all_matches = fn str, pat ->
-  Regex.scan(pat, str, capture: :all_but_first) |> Enum.concat
-end
-
-read_numbers = fn str ->
-  all_matches.(str, ~r/(-?\d+)/) |> Enum.map(&String.to_integer/1)
-end
-
 parse_block = fn block ->
   String.split(block, "\n", trim: true) |> tl |>  # drop header line
-  Enum.map(read_numbers)
+  Enum.map(&Util.read_numbers/1)
 end
 
 data = read_input.() |> Enum.map(parse_block) |> Enum.with_index
@@ -27,11 +21,6 @@ data = read_input.() |> Enum.map(parse_block) |> Enum.with_index
 # of each beacon's distance from each other beacon (or rather the square
 # of the distance, extending the Pythagorean theorem to three dimensions).
 calc_d = fn i, j -> Integer.pow(i - j, 2) end
-
-# calculate the Manhattan distance between any two 3D points
-m_dist3 = fn [x1, y1, z1], [x2, y2, z2] ->
-  abs( x1 - x2 ) + abs( y1 - y2 ) + abs( z1 - z2 )
-end
 
 # Once we have the distance data, we can fingerprint each point based on
 # a sorted list of its distances to all the other points in its system.
@@ -151,11 +140,11 @@ find_overlap = fn s, dist, found ->
   end)
 end
 
+# drop the inputs, keep the index values
 data = Enum.map(data, fn {_, n} -> n end)
-init_search = tl(data) |> MapSet.new
 
 found =
-  Enum.reduce_while(Stream.cycle([1]), {info, %{0 => [0,0,0]}, init_search},
+  Enum.reduce_while(Stream.cycle([1]), {info, %{0 => [0,0,0]}, tl(data)},
   fn _, {info, found, search} ->
     if Enum.empty?(search) do {:halt, found}
     else
@@ -166,17 +155,15 @@ found =
         else
           [{f, matches}] = Enum.take(overlap, 1)
           {info, found} = find_translation.(s, f, matches, info, found)
-          {:halt, {info, found, MapSet.delete(search, s)}}
+          {:halt, {info, found, List.delete(search, s)}}
         end
       end) |> then(&{:cont, &1})
     end
-  end)
+  end) |> Map.new(fn {k, v} -> {k, List.to_tuple(v)} end)
 
 # Now that we've adjusted the frame of reference for each scanner,
 # we can determine how far apart the scanners all are from each other.
 largest_scanner_distance =
-  # counting $j up from $i to avoid counting the same distance twice
-  for i <- data, j <- Enum.drop_while(data, fn j -> j < i end)
-  do m_dist3.(found[i], found[j]) end |> Enum.max
+  for i <- data, j <- data do Util.m_dist(found[i], found[j]) end |> Enum.max
 
 IO.puts("Part 2: #{largest_scanner_distance}")

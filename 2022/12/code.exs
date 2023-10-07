@@ -1,26 +1,16 @@
 # Solution to Advent of Code 2022, Day 12
 # https://adventofcode.com/2022/day/12
 
+Code.require_file("Matrix.ex", "..")
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
   File.read!(filename) |> String.split("\n", trim: true)
 end
 
-# parses input as a grid of values
-matrix = fn lines ->
-  for {line, y} <- Enum.with_index(lines),
-      {v, x} <- String.graphemes(line) |> Enum.with_index,
-  do: {x, y, v}
-end
-
-matrix_map = fn matrix ->
-  for {x, y, v} <- matrix, into: %{}, do: { {x, y}, v }
-end
-
-grid = read_input.() |> matrix.()
-grid_map = matrix_map.(grid)
-point_value = fn p -> Map.get(grid_map, p, nil) end
+grid = read_input.() |> Matrix.map
 
 init_data = fn paths -> %{ paths: paths, visited: MapSet.new } end
 
@@ -30,11 +20,11 @@ reachable? = fn v_cur, v_nxt ->
 end
 
 filter_reachable = fn points, v ->
-  Enum.filter(points, fn {_, _, pv} -> reachable?.(v, pv) end)
+  Enum.filter(points, fn {_, pv} -> reachable?.(v, pv) end)
 end
 
 check_for_end = fn points, v_cur ->
-  ends = Enum.filter(points, fn {_, _, pv} -> pv == "E" end)
+  ends = Enum.filter(points, fn {_, pv} -> pv == "E" end)
   cond do
     Enum.empty?(ends) -> filter_reachable.(points, v_cur)
     reachable?.(v_cur, "z") -> ends  # ending point has 'z' value
@@ -42,29 +32,27 @@ check_for_end = fn points, v_cur ->
   end
 end
 
-next_steps = fn {x, y, v}, data ->
+next_steps = fn {xy, v}, data ->
   v = if(v == "S", do: "a", else: v)  # starting point has 'a' value
-  [ {x - 1, y}, {x + 1, y}, {x, y - 1}, {x, y + 1} ]
-  |> Enum.reject(fn p -> MapSet.member?(data.visited, p) end)
-  |> Enum.map(fn p -> Tuple.append(p, point_value.(p)) end)
-  |> Enum.reject(fn {_, _, pv} -> pv == nil end) |> check_for_end.(v)
+  nxt = Util.adj_pos(xy) |> Enum.reject(fn p -> p in data.visited end)
+  Map.take(grid, nxt) |> Map.to_list |> check_for_end.(v)
 end
 
-evaluate_pos = fn {x, y, v}, data ->
-  visited = MapSet.put(data.visited, {x, y})  # not stored yet
-  possible = next_steps.({x, y, v}, data)
+evaluate_pos = fn {xy, v}, data ->
+  visited = MapSet.put(data.visited, xy)  # not stored yet
+  to_try = next_steps.({xy, v}, data)
   [cur_path | paths] = data.paths
   cond do
-    MapSet.member?(data.visited, {x, y}) -> {:cont, %{data | paths: paths}}
-    Enum.empty?(possible) -> {:cont, %{data | visited: visited, paths: paths}}
-    List.keyfind(possible, "E", 2) -> {:halt, length(cur_path)}
-    true -> new_paths = Enum.map(possible, fn p -> [p | cur_path] end)
+    xy in data.visited -> {:cont, %{data | paths: paths}}
+    Enum.empty?(to_try) -> {:cont, %{data | visited: visited, paths: paths}}
+    List.keyfind(to_try, "E", 1) -> {:halt, length(cur_path)}
+    true -> new_paths = Enum.map(to_try, fn p -> [p | cur_path] end)
     {:cont, %{data | visited: visited, paths: paths ++ new_paths}}
   end
 end
 
 start_paths = fn start_vals, matrix ->
-  for {x, y, v} <- matrix, v in start_vals, do: [{x, y, v}]
+  for {xy, v} <- matrix, v in start_vals, do: [{xy, v}]
 end
 
 walk_map = fn matrix, start_vals ->

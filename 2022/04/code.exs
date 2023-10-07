@@ -10,7 +10,7 @@ end
 # In this exercise, each line contains 4 integers that describe 2 ranges.
 # Our assignment is to detect how the ranges overlap each other.
 parse_line = fn line ->
-  Regex.run(~r/^(\d+)\-(\d+),(\d+)\-(\d+)$/, line) |> tl
+  String.split(line, ",") |> Enum.flat_map(&String.split(&1, "-"))
   |> Enum.map(&String.to_integer/1)
 end
 

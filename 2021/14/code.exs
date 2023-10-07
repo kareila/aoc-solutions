@@ -19,9 +19,8 @@ parse_rules = fn line ->
 end
 
 parse_freq = fn line ->
-  chars = String.graphemes(line)
-  Enum.zip([nil | chars], chars) |> tl |>
-  Enum.map(fn {a, b} -> a <> b end) |> Enum.frequencies
+  gs = String.graphemes(line)
+  Enum.zip_with(gs, tl(gs), fn a, b -> a <> b end) |> Enum.frequencies
 end
 
 parse_input = fn [start | lines] ->
@@ -29,24 +28,25 @@ parse_input = fn [start | lines] ->
     rules: Map.new(lines, parse_rules)}
 end
 
+m_merge = fn m1, m2 -> Map.merge(m1, m2, fn _, v1, v2 -> v1 + v2 end) end
+
 data = read_input.() |> parse_input.()
 
-do_insertion = fn freq ->
-  pk = fn {k, v} -> Enum.map(Map.fetch!(data.rules, k), &{&1, v}) end
-  fv = fn {p, v}, next -> Map.update(next, p, v, &(&1 + v)) end
-  Enum.flat_map(freq, pk) |> Enum.reduce(%{}, fv)
+do_insertion = fn _, freq ->
+  pk = fn {k, v} -> Map.fetch!(data.rules, k) |> Map.from_keys(v) end
+  Enum.map(freq, pk) |> Enum.reduce(m_merge)
 end
 
-diff = fn {least, most} -> most - least end
+tuple_diff = fn {least, most} -> most - least end
 
 calc = fn n ->
-  Enum.reduce(1..n, data.freq, fn _, freq -> do_insertion.(freq) end) |>
   # count the first element of each pair, since pairs overlap
-  Enum.map(fn {k, v} -> Map.new([{String.first(k), v}]) end) |>
-  Enum.reduce(%{}, &Map.merge(&2, &1, fn _, v1, v2 -> v1 + v2 end)) |>
+  sk = fn {k, v} -> Map.new([{String.first(k), v}]) end
+  Enum.reduce(1..n, data.freq, do_insertion) |>
+  Enum.map(sk) |> Enum.reduce(m_merge) |>
   # the last char of the string is the odd one out, make sure to count it
   Map.update(String.last(data.start), 1, &(&1 + 1)) |>
-  Map.values |> Enum.min_max |> diff.()
+  Map.values |> Enum.min_max |> tuple_diff.()
 end
 
 IO.puts("Part 1: #{calc.(10)}")

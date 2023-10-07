@@ -1,15 +1,12 @@
 # Solution to Advent of Code 2022, Day 11
 # https://adventofcode.com/2022/day/11
 
+Code.require_file("Util.ex", "..")
+
 # returns a list of non-blank lines from the input file
 read_input = fn ->
   filename = "input.txt"
   File.read!(filename) |> String.split("\n", trim: true)
-end
-
-# converts an input line to an integer (empty string is nil)
-s_to_int = fn line ->
-  if line == "", do: nil, else: String.to_integer(line)
 end
 
 # monkeys: list of maps with keys 'items', 'oper', 'test', 'true', 'false'
@@ -21,16 +18,14 @@ init_data = fn fn_r ->
 end
 
 parse_items = fn [cur_m | m_list], l, data ->
-  [_, item_str] = Regex.run(~r/: ([0-9, ]+)$/, l)
-  items = String.split(item_str, ", ") |> Enum.map(s_to_int)
-       |> Enum.reverse
+  items = Util.read_numbers(l) |> Enum.reverse
   %{data | monkeys: [Map.put(cur_m, :items, items) | m_list]}
 end
 
 parse_oper = fn [cur_m | m_list], l, data ->
   [_, op, what] = Regex.run(~r/: new = old ([+*]) (\S+)$/, l)
   calc = fn arg ->
-    num = if(what == "old", do: arg, else: s_to_int.(what))
+    num = if(what == "old", do: arg, else: String.to_integer(what))
     case op do
       "+" -> arg + num
       "*" -> arg * num
@@ -40,16 +35,15 @@ parse_oper = fn [cur_m | m_list], l, data ->
 end
 
 parse_test = fn [cur_m | m_list], l, data ->
-  [_, num_str] = Regex.run(~r/: divisible by (\d+)$/, l)
-  num = s_to_int.(num_str)
+  [num] = Util.read_numbers(l)
   test = fn n -> Integer.mod(n, num) == 0 end
   %{data | monkeys: [Map.put(cur_m, :test, test) | m_list],
            divisors: MapSet.put(data.divisors, num)}
 end
 
 parse_bool = fn [cur_m | m_list], l, data, bool ->
-  [_, m_id] = Regex.run(~r/: throw to monkey (\d+)$/, l)
-  %{data | monkeys: [Map.put(cur_m, bool, s_to_int.(m_id)) | m_list]}
+  [m_id] = Util.read_numbers(l)
+  %{data | monkeys: [Map.put(cur_m, bool, m_id) | m_list]}
 end
 
 parse_line = fn l, data ->

@@ -1,6 +1,8 @@
 # Solution to Advent of Code 2021, Day 4
 # https://adventofcode.com/2021/day/4
 
+Code.require_file("Util.ex", "..")
+
 # returns a list of ALL BLOCKS from the input file
 read_input = fn ->
   filename = "input.txt"
@@ -29,7 +31,7 @@ end
 data = read_input.() |> parse_input.()
 
 has_elem_bingo? = fn board, draws, e ->
-  Enum.group_by(board, &elem(&1,e), &elem(&1,2)) |> Map.values |>
+  Util.group_tuples(board, e, 2) |> Map.values |>
   Enum.any?(&MapSet.subset?(MapSet.new(&1), draws))
 end
 
@@ -46,7 +48,7 @@ find_first_bingo = fn ->
 end
 
 calc_score = fn [board, b_num, called] ->
-  Enum.map(board, &elem(&1,2)) |> Enum.reject(&MapSet.member?(called, &1)) |>
+  Enum.map(board, &elem(&1,2)) |> Enum.reject(&(&1 in called)) |>
   Enum.sum |> then(&(&1 * b_num))
 end
 

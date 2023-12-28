@@ -31,6 +31,13 @@ Have fun saving Christmas!
 Changes
 -------
 
+### 28 Dec 2023
+
+Finalized my solutions for the 2023 Advent of Code. These were written
+in Elixir and none take more than 5 seconds to execute on my machine.
+(Only Day 23 takes more than 3 seconds.)
+
+
 ### 7 Oct 2023
 
 Updated the 2021-2022 Elixir solutions to use the shared libraries.
@@ -92,4 +99,4 @@ Finished Perl solutions for 2020. (It's the twelfth day of Christmas!)
 Initial release of Perl solutions from 2022.
 
 
-_kareila at dreamwidth dot org // 7 Oct 2023_
+_kareila at dreamwidth dot org // 28 Dec 2023_
